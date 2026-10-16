@@ -70,6 +70,8 @@ SynthOrg builds on other people's projects, each with its own licence:
 
 The full licences are in their folders and in the packages.
 
+Thanks to everyone who wrote these projects: without them SynthOrg would not exist.
+
 ## Status
 
 In development. The automated tests cover the service; the app is tried by hand on Windows, on Ubuntu in WSL and on the phone.
