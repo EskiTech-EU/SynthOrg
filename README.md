@@ -21,6 +21,8 @@ SynthOrg is a desktop app for working with AI models without going through any s
 
 ## Installation
 
+Prebuilt packages for Windows, Linux and Android are on [www.eskitech.eu](https://www.eskitech.eu).
+
 - **Windows**: the `.exe` installer. WSL2 is needed for the pods: the app creates and manages its own distro.
 - **Linux**: the `.deb` package (Ubuntu 22.04 or later; `podman` recommended for the pods).
 - **Android**: the `.apk` for arm64. The phone also works on its own, with its own key; it is paired with the computer through a QR code.
