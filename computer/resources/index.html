@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SynthOrg - AI Orchestrator</title>
+  
+  <!-- Modern Typography (Inter, JetBrains Mono, Outfit) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Free (Local Vector Webfonts & Icons, 100% Offline) -->
+  <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
+  
+  <!-- Application & Favicon Icons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/appIcon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/appIcon.png">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/icons/appIcon.png">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Apply saved appearance before the first paint. -->
+  <script src="/js/theme.js"></script>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Elegant Startup Splash Screen -->
+  <div id="app-splash-screen" class="app-splash-screen" aria-hidden="true">
+    <div class="splash-ambient-glow"></div>
+    <div class="splash-content">
+      <div class="splash-logo-container">
+        <div class="splash-glow-aura"></div>
+        <img src="icons/synthorg_logo.png" alt="SynthOrg" class="splash-logo-img">
+      </div>
+      <div class="splash-text-group">
+        <h1 class="splash-title">SynthOrg</h1>
+        <p class="splash-subtitle" data-i18n="app.subtitle">AI Orchestration &amp; Capability Engine</p>
+      </div>
+      <div class="splash-progress-track" id="splash-progress-track">
+        <div class="splash-progress-bar"></div>
+      </div>
+      <span class="splash-status-text" id="splash-status-text" data-i18n="app.initializing">Inizializzazione orchestratore…</span>
+
+      <form id="splash-unlock-form" class="splash-unlock" hidden>
+        <div class="splash-unlock-title"><i class="fa-solid fa-lock"></i> <span data-i18n="vault.enterPassword">Inserisci la master password</span></div>
+        <div class="splash-unlock-row">
+          <input type="password" id="splash-unlock-input" class="splash-unlock-input" autocomplete="current-password" spellcheck="false" data-i18n-placeholder="vault.passwordPlaceholder" placeholder="Master password">
+          <button type="submit" id="splash-unlock-submit" class="splash-unlock-btn" aria-label="Sblocca">
+            <i class="fa-solid fa-lock-open"></i>
+          </button>
+        </div>
+        <span id="splash-unlock-error" class="splash-unlock-error" hidden></span>
+      </form>
+    </div>
+  </div>
+
+  <div id="app" class="app-root">
+    <!-- Top Header Navigation: the tools on the left, the sections in the middle, the window on the right -->
+    <header class="app-header">
+      <!-- The phone's header keeps the logo (styles.css, .is-phone). -->
+      <div class="brand-group">
+        <div class="brand-logo">
+          <img src="icons/synthorg_logo.png" alt="SynthOrg" class="brand-logo-img">
+        </div>
+      </div>
+
+      <div class="header-tools">
+        <button class="nav-tab header-tool" id="tab-btn-settings" onclick="switchView('settings')" title="Impostazioni" data-i18n-title="nav.settings" aria-label="Impostazioni" data-i18n-aria-label="nav.settings">
+          <i class="fa-solid fa-gear"></i>
+          <span data-i18n="nav.settings">Impostazioni</span>
+        </button>
+        <button type="button" class="header-tool header-tool-danger" id="btn-wipe-data" disabled title="Elimina tutti i dati" data-i18n-title="shell.wipe" aria-label="Elimina tutti i dati" data-i18n-aria-label="shell.wipe">
+          <i class="fa-solid fa-fire"></i>
+        </button>
+        <!-- The local models in memory: how many, and a small list to free them or load the last ones (loaded-models.js). -->
+        <div class="header-tool-wrap">
+          <button type="button" class="header-tool" id="btn-loaded-models" data-state="off" aria-haspopup="true" aria-expanded="false" title="Modelli in memoria" aria-label="Modelli in memoria">
+            <i class="fa-solid fa-microchip"></i>
+            <span class="header-tool-count" aria-hidden="true"></span>
+          </button>
+          <div class="loaded-models-panel" id="loaded-models-panel" role="dialog" aria-label="Modelli in memoria" data-i18n-aria-label="loadedModels.inMemory" hidden></div>
+        </div>
+        <!-- The phone: the icon says whether the service is on, the dot how the connection is (chat-shell.js). -->
+        <button type="button" class="header-tool" id="btn-phone-status" data-service="off" data-link="none" title="Telefono" data-i18n-title="settings.tabPhone" aria-label="Telefono" data-i18n-aria-label="settings.tabPhone">
+          <i class="fa-solid fa-mobile-screen"></i>
+          <span class="header-tool-dot" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <!-- Code and Studio keep their tabs in the page, not shown: their projects are opened from the Lab. -->
+      <nav class="nav-tabs">
+        <button class="nav-tab" id="tab-btn-realtime" onclick="switchView('realtime')" title="Assistente" data-i18n-title="nav.realtime" aria-label="Assistente" data-i18n-aria-label="nav.realtime">
+          <i class="fa-solid fa-face-smile"></i>
+          <span data-i18n="nav.mo">MO'</span>
+        </button>
+        <button class="nav-tab active" id="tab-btn-chat" onclick="switchView('chat')" title="Chat" data-i18n-title="nav.chat" aria-label="Chat" data-i18n-aria-label="nav.chat">
+          <i class="fa-solid fa-comments"></i>
+          <span data-i18n="nav.chat">Chat</span>
+        </button>
+        <button class="nav-tab" id="tab-btn-lab" onclick="switchView('lab')" title="Lab" data-i18n-title="nav.lab" aria-label="Lab" data-i18n-aria-label="nav.lab">
+          <i class="fa-solid fa-flask"></i>
+          <span data-i18n="nav.lab">Lab</span>
+        </button>
+        <!-- The Hub: the models on this computer and the Hugging Face browser to get more (local-models.js). -->
+        <button class="nav-tab" id="tab-btn-hub" onclick="switchView('hub')" title="Hub dei modelli" data-i18n-title="nav.hubTitle" aria-label="Hub dei modelli" data-i18n-aria-label="nav.hubTitle">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+          <span data-i18n="nav.hub">Hub</span>
+          <!-- Drawn here, not a character of a font: a system without colour emoji (a bare Linux) shows an empty box for one. -->
+          <svg class="nav-hub-mark" viewBox="0 0 30 22" aria-hidden="true" focusable="false">
+            <circle cx="15" cy="10.5" r="10" fill="#FFD21E"/>
+            <ellipse cx="9.2" cy="12.6" rx="1.9" ry="1.2" fill="#FF9D0B" opacity=".55"/>
+            <ellipse cx="20.8" cy="12.6" rx="1.9" ry="1.2" fill="#FF9D0B" opacity=".55"/>
+            <path d="M9.6 8.9c.5-1.3 2.3-1.3 2.8 0M17.6 8.9c.5-1.3 2.3-1.3 2.8 0" fill="none" stroke="#3A3B45" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M10.6 12.3c1 2.3 2.6 3.4 4.4 3.4s3.4-1.1 4.4-3.4" fill="none" stroke="#3A3B45" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M2.2 17.4c0-2.2 1.6-3.9 3.6-3.9 1 0 1.9.4 2.6 1.1l2.3 2.4c.9.9.9 2.3 0 3.1-.9.9-2.3 1.4-4 1.4-2.6 0-4.5-1.7-4.5-4.1z" fill="#FF9D0B"/>
+            <path d="M27.8 17.4c0-2.2-1.6-3.9-3.6-3.9-1 0-1.9.4-2.6 1.1l-2.3 2.4c-.9.9-.9 2.3 0 3.1.9.9 2.3 1.4 4 1.4 2.6 0 4.5-1.7 4.5-4.1z" fill="#FF9D0B"/>
+          </svg>
+        </button>
+        <button class="nav-tab" id="tab-btn-code" hidden onclick="switchView('code')" title="Code" data-i18n-title="nav.code" aria-label="Code" data-i18n-aria-label="nav.code">
+          <i class="fa-solid fa-code"></i>
+          <span data-i18n="nav.code">Code</span>
+        </button>
+        <button class="nav-tab" id="tab-btn-studio" hidden onclick="switchView('studio')" title="Studio" data-i18n-title="nav.studio" aria-label="Studio" data-i18n-aria-label="nav.studio">
+          <i class="fa-solid fa-feather-pointed"></i>
+          <span data-i18n="nav.studio">Studio</span>
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <!-- Custom Window Controls: riduci a icona, chiudi la finestra lasciando attivo il servizio, ingrandisci / ripristina, chiudi tutto -->
+        <div class="window-controls-bar" id="window-controls-bar">
+          <button type="button" class="win-btn win-btn-minimize" id="btn-win-minimize" title="Riduci a icona" data-i18n-title="shell.winMinimize" aria-label="Riduci a icona" data-i18n-aria-label="shell.winMinimize">
+            <i class="fa-solid fa-minus"></i>
+          </button>
+          <button type="button" class="win-btn win-btn-hide" id="btn-win-hide" title="Chiudi la finestra, SynthOrg resta attivo" data-i18n-title="shell.winHide" aria-label="Chiudi la finestra, SynthOrg resta attivo" data-i18n-aria-label="shell.winHide">
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+          <button type="button" class="win-btn win-btn-maximize" id="btn-win-maximize" title="Ingrandisci / Ripristina" aria-label="Ingrandisci">
+            <i class="fa-regular fa-square"></i>
+          </button>
+          <button type="button" class="win-btn win-btn-close" id="btn-win-close" title="Chiudi SynthOrg" data-i18n-title="shell.winClose" aria-label="Chiudi SynthOrg" data-i18n-aria-label="shell.winClose">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- App Views Container -->
+    <main class="app-main-content">
+      <!-- VIEW 0: Realtime — the character, filled in by realtime.js -->
+      <section id="view-realtime" class="app-view" style="display: none;"></section>
+
+      <!-- VIEW 1: Chat Orchestrator (Primary Workspace) -->
+      <section id="view-chat" class="app-view">
+        <div class="chat-workspace-layout">
+          <aside class="conversation-sidebar" id="conversation-sidebar" aria-label="Conversazioni" data-i18n-aria-label="chat.sidebarAriaLabel">
+            <!-- What the column shows, the chats or the artifacts of all of them, and the column closed or open. -->
+            <div class="conversation-sidebar-tabs">
+              <div class="conversation-tabs" role="tablist">
+                <button type="button" role="tab" class="conversation-tab active" id="side-tab-chats" aria-selected="true" data-i18n="shell.tabChats">Chat</button>
+                <button type="button" role="tab" class="conversation-tab" id="side-tab-artifacts" aria-selected="false" data-i18n="artifacts.headerBtn">Artefatti</button>
+              </div>
+              <button type="button" class="side-tool side-tool-collapse" id="btn-sidebar-collapse" aria-expanded="true" title="Chiudi o apri la colonna" data-i18n-title="shell.collapse" aria-label="Chiudi o apri la colonna" data-i18n-aria-label="shell.collapse"><i class="fa-solid fa-chevron-left"></i></button>
+            </div>
+            <div class="conversation-sidebar-top">
+              <label class="conversation-search" for="chat-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="chat-search" type="search" placeholder="Cerca nelle chat…" aria-label="Cerca nelle chat" maxlength="200" data-i18n-placeholder="chat.searchPlaceholder" data-i18n-aria-label="chat.searchAriaLabel"></label>
+            </div>
+            <!-- The artifacts of every chat, by chat: all of them or MO's alone, in the order chosen. -->
+            <div class="side-artifacts-tools" id="side-artifacts-tools" hidden>
+              <div class="conversation-tabs side-artifacts-source" role="group">
+                <button type="button" class="conversation-tab active" data-source="all" aria-pressed="true" data-i18n="shell.filterAll">Tutti</button>
+                <button type="button" class="conversation-tab" data-source="mo" aria-pressed="false" data-i18n="shell.filterMo">Di MO'</button>
+              </div>
+              <select id="side-artifacts-sort" class="select-control" aria-label="Ordina per" data-i18n-aria-label="shell.sortLabel" title="Ordina per" data-i18n-title="shell.sortLabel">
+                <option value="date" data-i18n="shell.sortDate">Più recenti</option>
+                <option value="name" data-i18n="shell.sortName">Nome</option>
+                <option value="kind" data-i18n="shell.sortKind">Tipo</option>
+                <option value="size" data-i18n="shell.sortSize">Dimensione</option>
+              </select>
+            </div>
+            <div id="side-artifacts" class="side-artifacts" hidden></div>
+            <button type="button" class="conversation-row" id="btn-new-chat" disabled><i class="fa-solid fa-plus"></i> <span data-i18n="shell.newChat">Nuova chat</span></button>
+            <!-- Inside the archive or MO's chats: the way back to the chats. -->
+            <button type="button" class="conversation-row conversation-row-back" id="btn-chats-back" hidden><i class="fa-solid fa-chevron-left"></i> <span id="chats-back-label"></span></button>
+            <!-- The chat of the tasks the Realtime character hands to the Master: the list of MO's chats. -->
+            <div id="realtime-tasks-slot" class="realtime-tasks-slot" hidden></div>
+            <div id="conversation-list" class="conversation-list"><p class="conversation-empty" data-i18n="chat.loadingChats">Caricamento conversazioni…</p></div>
+            <!-- What else is reached from the column: each row is entered like a place of its own. -->
+            <div class="conversation-sidebar-nav" id="conversation-sidebar-nav">
+              <button type="button" class="conversation-row conversation-row-nav" id="btn-chats-mo"><span data-i18n="shell.moChats">Chat di MO'</span><i class="fa-solid fa-chevron-right"></i></button>
+              <button type="button" class="conversation-row conversation-row-nav" id="btn-chats-archived"><span data-i18n="shell.archived">Archiviate</span><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <!-- On the chats picked in the list or, with none picked, on the open one. -->
+            <div class="conversation-sidebar-bottom">
+              <button type="button" class="side-action" id="btn-chats-select" aria-pressed="false" title="Seleziona più chat" data-i18n-title="shell.select"><i class="fa-regular fa-square-check"></i> <span data-i18n="shell.selectShort">Seleziona</span></button>
+              <button type="button" class="side-action" id="btn-archive-chat"><i class="fa-solid fa-box-archive"></i> <span data-i18n="shell.archive">Archivia</span></button>
+              <button type="button" class="side-action side-action-danger" id="btn-delete-chat"><i class="fa-solid fa-trash-can"></i> <span data-i18n="common.delete">Elimina</span></button>
+            </div>
+          </aside>
+          <!-- The column is as wide as the user drags it, between 15% and 35% of the window. -->
+          <div class="conversation-resizer" id="conversation-resizer" role="separator" aria-orientation="vertical" aria-controls="conversation-sidebar"></div>
+          <div class="conversation-workspace">
+            <div class="conversation-toolbar">
+              <button type="button" class="side-tool side-tool-label" id="btn-export-chat" title="Esporta la chat" data-i18n-title="shell.export"><i class="fa-solid fa-file-export"></i> <span data-i18n="shell.exportShort">Esporta</span></button>
+              <div class="conversation-toolbar-right">
+                <!-- The artifacts of this chat alone: drawn by chatManager.renderChatHeader(). -->
+                <div class="chat-artifacts-slot" id="chat-artifacts-slot"></div>
+                <button type="button" class="side-tool side-tool-label" id="btn-chat-settings" aria-expanded="false" aria-controls="chat-settings-panel"><i class="fa-solid fa-sliders"></i> <span data-i18n="shell.chatSettings">Impostazioni della chat</span></button>
+                <!-- The settings of the chat, as they were: its Master, its memory, its environment, its tools. -->
+                <div class="chat-settings-panel" id="chat-settings-panel" hidden>
+                  <!-- In a project's chat: what the model may do there without asking, and whether it works by a plan. -->
+                  <div class="code-perm-group" id="code-perm-group" hidden>
+                    <label class="code-perm"><span id="code-perm-code-label" data-i18n="code.permCode">Codice</span> <select id="code-perm-code" class="code-perm-select"></select></label>
+                    <label class="code-perm" id="code-perm-terminal-wrap"><span data-i18n="code.permTerminal">Terminale</span> <select id="code-perm-terminal" class="code-perm-select"></select></label>
+                    <label class="code-perm"><span data-i18n="plan.name">Piano</span> <select id="code-perm-plan" class="code-perm-select"></select></label>
+                    <label class="code-perm"><span data-i18n="plan.tries">Tentativi</span> <input type="number" id="code-perm-plan-tries" class="code-perm-number" min="1" max="50" step="1"></label>
+                    <button type="button" class="btn-chat-action" id="code-perm-list" title="Approvazioni ricordate" aria-label="Approvazioni ricordate" data-i18n-title="code.permList" data-i18n-aria-label="code.permList"><i class="fa-solid fa-list-check"></i></button>
+                  </div>
+                  <div class="chat-master-info-slot" id="chat-header-master-info">
+                    <!-- Master Orchestrator info dynamically populated -->
+                  </div>
+                  <div class="chat-top-orchestrator-bar" id="chat-active-orchestrator-bar">
+                    <!-- Dynamically populated by chatManager.renderChatHeader() -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="chat-storage-error" class="chat-storage-error" role="alert" hidden>
+              <span id="chat-storage-error-text"></span>
+              <div class="chat-storage-error-actions">
+                <button class="btn" id="btn-retry-storage" data-i18n="common.retry"><i class="fa-solid fa-rotate-right"></i> Riprova</button>
+                <button class="btn btn-close-error" id="btn-dismiss-storage-error" title="Chiudi avviso" aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            </div>
+
+        <!-- Chat Conversation Feed -->
+        <div class="chat-messages-scroll" id="chat-messages-container">
+          <!-- Dynamically populated by chatManager.renderMessages() -->
+        </div>
+
+        <!-- A notice of the character about this chat: part of the page, above the input -->
+        <div id="chat-notice" class="rt-notice-host"></div>
+
+        <!-- Chat Input Footer: what is added to the chat, the dictation, the text, the send button -->
+        <div class="chat-input-area">
+          <div class="chat-input-wrapper">
+            <div class="chat-input-tools">
+              <button type="button" class="btn btn-secondary btn-icon-action" id="chat-btn-add" aria-expanded="false" aria-controls="chat-add-menu" title="Aggiungi alla chat" data-i18n-title="shell.add" aria-label="Aggiungi alla chat" data-i18n-aria-label="shell.add">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+              <div class="chat-add-menu" id="chat-add-menu" role="menu" hidden>
+                <button type="button" role="menuitem" data-add="artifact"><i class="fa-solid fa-shapes"></i> <span data-i18n="shell.addArtifact">Artefatti</span></button>
+                <button type="button" role="menuitem" data-add="file"><i class="fa-solid fa-file-arrow-up"></i> <span data-i18n="shell.addFile">File dal computer</span></button>
+                <button type="button" role="menuitem" data-add="pod"><i class="fa-solid fa-cube"></i> <span data-i18n="shell.addPod">Pod di un'altra chat</span></button>
+              </div>
+              <input type="file" id="chat-add-file" multiple hidden>
+              <button type="button" class="btn btn-secondary btn-icon-action btn-stt" id="chat-btn-stt" title="Dettatura vocale (Microfono)" data-i18n-title="chat.btnStt" aria-label="Microfono">
+                <i class="fa-solid fa-microphone"></i>
+              </button>
+            </div>
+            <textarea
+              id="chat-input"
+              rows="1"
+              placeholder="Scrivi qualcosa qui"
+              data-i18n="chat.inputPlaceholder"
+              title="Invio per inviare · Shift + Invio per andare a capo"
+              data-i18n-title="chat.inputHint"
+              spellcheck="false"
+            ></textarea>
+
+            <div class="chat-input-actions">
+              <button class="btn btn-primary btn-send-chat" id="chat-btn-send" disabled title="Invia" data-i18n-title="chat.btnSend" aria-label="Invia" data-i18n-aria-label="chat.btnSend">
+                <i class="fa-regular fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+          </div>
+        </div>
+      </section>
+      <!-- VIEW 2: Impostazioni (Multi-Section: Ruoli & Tool / Aspetto & Grafica) -->
+      <!-- VIEW: Hub — the local models and the Hugging Face browser, drawn by local-models.js. -->
+      <section id="view-hub" class="app-view hub-view" style="display: none;">
+        <div id="hub-host" class="environment-workspace"></div>
+      </section>
+      <!-- VIEW: Lab — every project, and the making of a new one (lab.js). -->
+      <section id="view-lab" class="app-view lab-view" style="display: none;">
+        <div class="lab-bar">
+          <button type="button" class="side-tool side-tool-label" id="lab-btn-new"><i class="fa-solid fa-plus" aria-hidden="true"></i> <span data-i18n="code.newProject">Nuovo progetto</span></button>
+          <button type="button" class="side-tool side-tool-label" id="lab-btn-github"><i class="fa-brands fa-github" aria-hidden="true"></i> <span>GitHub</span></button>
+        </div>
+        <div id="lab-error" class="chat-storage-error lab-error" role="alert" hidden><span id="lab-error-text"></span></div>
+        <div id="lab-grid" class="lab-grid"></div>
+      </section>
+      <!-- VIEW: a project open. One frame for every environment: the files of the project in a column of the page,
+           and in the middle what is open, under the functions and over the toolbars; the project's chat beside it.
+           What is in the middle is the environment's own: the code editor (SideX in a folder, the editor of the pod
+           in a pod), photocraft, the sheets of a text. -->
+      <section id="view-code" class="app-view" style="display: none;">
+        <!-- While a project opens: what is being done, and what went wrong. -->
+        <div id="code-projects" class="code-projects">
+          <div class="code-projects-inner">
+            <div id="code-projects-error" class="chat-storage-error code-projects-error" role="alert" hidden><span id="code-projects-error-text"></span></div>
+            <p id="code-projects-status" class="code-projects-status" role="status" hidden><i class="fa-solid fa-circle-notch spinning"></i> <span id="code-projects-status-text"></span></p>
+            <!-- The same bar as the startup splash: opening a container project
+                 is twenty seconds of work the first time, and this says so. -->
+            <div id="code-progress-track" class="code-progress-track" hidden><div class="code-progress-bar"></div></div>
+          </div>
+        </div>
+
+        <div id="code-editor-shell" class="code-editor-shell proj-shell" hidden>
+          <!-- The files of the project: always here, whatever is open in the middle. -->
+          <aside class="proj-side" id="proj-side" aria-label="File del progetto" data-i18n-aria-label="proj.files">
+            <!-- The project: back to the others, its name and where it runs, what its history holds and its repository.
+                 Over the files whatever is in the middle; closed with the column, to the button that opens it again. -->
+            <div class="proj-side-head" id="proj-side-head">
+              <div class="proj-side-head-row">
+                <button type="button" class="side-tool side-tool-label" id="code-btn-projects"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> <span data-i18n="code.backToProjects">Progetti</span></button>
+                <!-- Closes the column to a strip and opens it again, like the button of the chat on the other side. -->
+                <button type="button" class="side-tool side-tool-collapse" id="proj-side-close" aria-expanded="true" title="Chiudi o apri la colonna dei file" data-i18n-title="proj.sideCollapse" aria-label="Chiudi o apri la colonna dei file" data-i18n-aria-label="proj.sideCollapse"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+              </div>
+              <div class="code-editor-project">
+                <i id="code-active-icon" aria-hidden="true"></i>
+                <span id="code-active-name"></span>
+                <span id="code-active-kind" class="code-kind-badge"></span>
+                <span id="code-active-branch" class="code-branch-badge" hidden><i class="fa-solid fa-code-branch"></i> <span id="code-active-branch-name"></span></span>
+                <span id="code-active-isolated" class="code-branch-badge" hidden><i class="fa-solid fa-lock"></i> <span data-i18n="code.isolatedBadge">Isolato</span></span>
+              </div>
+              <!-- What git could not record, or has not yet: shown only then. The history and the repository are at the foot of the column. -->
+              <div class="code-git-actions" id="code-git-actions" hidden>
+                <span id="code-git-changes" class="code-branch-badge" hidden><i class="fa-solid fa-pen"></i> <span id="code-git-changes-text"></span></span>
+                <span id="code-git-error" class="code-git-error" hidden></span>
+              </div>
+            </div>
+            <!-- The column's two tabs, as the column of the chats has them: the files of the project, and its artifacts. -->
+            <div class="conversation-tabs proj-side-tabs" role="tablist">
+              <button type="button" role="tab" class="conversation-tab active" id="proj-tab-files" aria-selected="true" data-i18n="shelf.tabFiles">File</button>
+              <button type="button" role="tab" class="conversation-tab" id="proj-tab-artifacts" aria-selected="false" data-i18n="artifacts.headerBtn">Artefatti</button>
+            </div>
+            <div class="proj-side-top">
+              <input type="search" id="proj-search" class="conversation-search" autocomplete="off" spellcheck="false" placeholder="Cerca file" data-i18n-placeholder="proj.search" aria-label="Cerca file" data-i18n-aria-label="proj.search">
+            </div>
+              <!-- What a linked repository adds: the branch, download and upload, over the files. -->
+              <div id="code-branch-head" class="code-branch-head" hidden>
+                <div class="code-branch-row">
+                  <button type="button" id="code-branch-name" class="code-branch-btn code-branch-name"><i class="fa-solid fa-code-branch" aria-hidden="true"></i><span id="code-branch-name-text" class="code-branch-label"></span><i class="fa-solid fa-chevron-down" id="code-branch-chevron" aria-hidden="true"></i></button>
+                  <button type="button" id="code-branch-auto" class="code-branch-btn code-branch-auto" aria-pressed="false"><i class="fa-solid fa-rotate" aria-hidden="true"></i></button>
+                </div>
+                <div class="code-branch-row">
+                  <button type="button" id="code-branch-pull" class="code-branch-btn code-branch-action"><i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i><span id="code-branch-pull-text" class="code-branch-label"></span><span class="code-branch-count" id="code-branch-pull-count"></span></button>
+                </div>
+                <button type="button" id="code-branch-diverged" class="code-branch-btn code-branch-diverged" hidden><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span id="code-branch-diverged-text" class="code-branch-label"></span></button>
+                <div id="code-branch-note" class="code-branch-note" hidden></div>
+              </div>
+              <div id="code-branch-menu" class="code-branch-menu" hidden>
+                <div id="code-branch-list" class="code-branch-list" role="listbox"></div>
+                <form id="code-branch-new" class="code-branch-new" novalidate>
+                  <input id="code-branch-new-name" maxlength="200" spellcheck="false" autocomplete="off" placeholder="Nuovo ramo" data-i18n-placeholder="code.branchNewPlaceholder" aria-label="Nuovo ramo" data-i18n-aria-label="code.branchNew">
+                  <button type="submit" class="btn" title="Crea il ramo" aria-label="Crea il ramo" data-i18n-title="code.branchCreate" data-i18n-aria-label="code.branchCreate"><i class="fa-solid fa-plus"></i></button>
+                </form>
+                <p id="code-branch-menu-error" class="code-new-error" role="alert"></p>
+              </div>
+            <!-- The artifacts: raw (what is still worked on) or finished, in the order chosen. Drawn by project-shelf.js. -->
+            <div class="side-artifacts-tools" id="proj-artifacts-tools" hidden>
+              <div class="conversation-tabs side-artifacts-source" role="group">
+                <button type="button" class="conversation-tab active" data-stage="raw" aria-pressed="true" title="Ciò su cui si lavora ancora: si apre nel suo editor" data-i18n-title="shelf.rawHint" data-i18n="shelf.raw">Raw</button>
+                <button type="button" class="conversation-tab" data-stage="finished" aria-pressed="false" title="Ciò che è finito: si guarda, e si trascina dove serve" data-i18n-title="shelf.finishedHint" data-i18n="shelf.finished">Finiti</button>
+              </div>
+              <select id="proj-artifacts-sort" class="select-control" aria-label="Ordina per" data-i18n-aria-label="shell.sortLabel" title="Ordina per" data-i18n-title="shell.sortLabel">
+                <option value="date" data-i18n="shell.sortDate">Più recenti</option>
+                <option value="name" data-i18n="shell.sortName">Nome</option>
+                <option value="kind" data-i18n="shell.sortKind">Tipo</option>
+                <option value="size" data-i18n="shell.sortSize">Dimensione</option>
+              </select>
+            </div>
+            <div id="proj-artifacts" class="side-artifacts" hidden></div>
+            <p id="proj-tree-error" class="proj-tree-error" role="alert" hidden></p>
+            <div id="proj-tree" class="proj-tree" role="tree" tabindex="0"></div>
+            <!-- The history of the project, in place of the files while it is asked for: its steps, newest first. -->
+            <div class="code-history-list" id="proj-history-list" hidden>
+              <div class="code-history-tools">
+                <input type="search" id="code-history-filter" class="code-hist-search" placeholder="Filtra per descrizione, autore o versione" data-i18n-placeholder="code.histFilter">
+                <span id="code-history-path" class="code-hist-chip" hidden><i class="fa-regular fa-file" aria-hidden="true"></i> <span id="code-history-path-text"></span>
+                  <button type="button" id="code-history-path-clear" title="Mostra tutto il progetto" aria-label="Mostra tutto il progetto" data-i18n-title="code.histAllFiles" data-i18n-aria-label="code.histAllFiles"><i class="fa-solid fa-xmark"></i></button>
+                </span>
+                <span id="code-history-github" class="code-hist-repo" hidden><i class="fa-brands fa-github" aria-hidden="true"></i> <span id="code-history-github-text"></span></span>
+              </div>
+              <div id="code-history-steps" class="code-history-steps"></div>
+              <button type="button" class="btn code-hist-more" id="code-history-more" hidden data-i18n="code.histMore">Mostra i passi precedenti</button>
+            </div>
+            <div class="conversation-sidebar-bottom proj-side-bottom">
+              <button type="button" class="side-action" id="proj-btn-history" aria-pressed="false" title="Lo storico del progetto: ogni passo registrato, da guardare e ripristinare" data-i18n-title="proj.historyHint"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span data-i18n="code.viewHistory">Storico</span><span class="side-count" id="proj-history-count"></span></button>
+              <button type="button" class="side-action" id="proj-btn-push"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i><span data-i18n="code.branchPush">Carica</span><span class="side-count" id="proj-push-count"></span></button>
+              <button type="button" class="side-action side-action-icon" id="proj-btn-zip" title="Esporta il progetto come zip" aria-label="Esporta il progetto come zip" data-i18n-title="proj.zip" data-i18n-aria-label="proj.zip"><i class="fa-solid fa-file-zipper" aria-hidden="true"></i></button>
+              <button type="button" class="side-action side-action-icon" id="code-git-repo" title="Repository del progetto" aria-label="Repository del progetto" data-i18n-title="code.gitRepo" data-i18n-aria-label="code.gitRepo"><i class="fa-brands fa-github" aria-hidden="true"></i></button>
+            </div>
+          </aside>
+          <!-- Dragged, the column of the files is as wide as the user wants it; the same on the other side for the chat. -->
+          <div class="conversation-resizer proj-resizer" id="proj-side-resizer" role="separator" aria-orientation="vertical" aria-controls="proj-side" title="Trascina per cambiare la larghezza" data-i18n-title="proj.resize"></div>
+
+          <div class="proj-center">
+            <!-- The functions: the environments of the project, and what the environment in view offers. -->
+            <div class="code-editor-bar proj-functions" id="proj-functions">
+              <!-- The environments on in this project, when there is more than one. -->
+              <div class="proj-envs" id="proj-envs" role="tablist" aria-label="Ambienti" data-i18n-aria-label="lab.envs" hidden></div>
+              <!-- Writing -->
+              <div class="proj-fn" id="proj-fn-writing" hidden>
+                <span id="studio-active-type" class="code-kind-badge"></span>
+                <span id="studio-active-words" class="code-branch-badge"></span>
+                <span id="studio-state" class="code-branch-badge studio-state" hidden><i class="fa-solid fa-circle-notch spinning" aria-hidden="true"></i> <span id="studio-state-text"></span></span>
+                <!-- The correction that runs by itself after a pause: a switch of its own, per project. -->
+                <label class="synth-toggle-wrapper studio-auto" for="studio-auto" title="Dopo una pausa, i paragrafi cambiati vengono sistemati dal modello" data-i18n-title="studio.autoHint"><span class="synth-switch"><input type="checkbox" id="studio-auto"><span class="synth-slider"></span></span> <span data-i18n="studio.autoClean">Sistema mentre scrivo</span></label>
+                <button type="button" class="btn" id="studio-clean-now" title="Sistema adesso i paragrafi cambiati di questo capitolo" data-i18n-title="studio.cleanNowHint"><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="studio.cleanNow">Sistema ora</span></button>
+                <button type="button" class="btn btn-primary" id="studio-compile" title="Compila il documento in LaTeX e mostra le pagine" data-i18n-title="studio.compileHint"><i class="fa-solid fa-file-pdf"></i> <span data-i18n="studio.compile">Impagina</span></button>
+                <button type="button" class="btn-chat-action" id="studio-pdf-toggle" aria-pressed="false" title="Mostra o nascondi le pagine impaginate" aria-label="Mostra o nascondi le pagine impaginate" data-i18n-title="studio.pdfToggle" data-i18n-aria-label="studio.pdfToggle"><i class="fa-regular fa-file-lines"></i></button>
+                <button type="button" class="btn-chat-action" id="studio-map" title="La mappa del testo che legge il modello" aria-label="La mappa del testo che legge il modello" data-i18n-title="studio.map" data-i18n-aria-label="studio.map"><i class="fa-solid fa-sitemap"></i></button>
+              </div>
+              <!-- Photo -->
+              <div class="proj-fn" id="proj-fn-photo" hidden>
+                <select id="photo-place" title="Inserisce un file della cartella come nuovo livello del documento aperto" aria-label="Inserisci come livello" data-i18n-title="photo.placeHint" data-i18n-aria-label="photo.place"></select>
+                <span id="photo-job" class="code-branch-badge studio-state" hidden><i class="fa-solid fa-circle-notch spinning" aria-hidden="true"></i> <span id="photo-job-text"></span></span>
+                <button type="button" class="btn" id="photo-model-warm" hidden><i class="fa-solid fa-download"></i> <span data-i18n="photo.modelWarm">Scarica il modello</span></button>
+                <button type="button" class="btn-chat-action" id="photo-settings" title="Impostazioni delle foto" aria-label="Impostazioni delle foto" data-i18n-title="photo.settings" data-i18n-aria-label="photo.settings"><i class="fa-solid fa-gear"></i></button>
+              </div>
+            </div>
+            <!-- What is open in the editor in view, the same whichever editor it is: its files as tabs on the left, and on the
+                 right what every editor has. -->
+            <div class="proj-filebar" id="proj-filebar">
+              <div class="proj-tabs" id="proj-tabs" role="tablist" aria-label="File aperti" data-i18n-aria-label="proj.fileTabs"></div>
+              <div class="proj-file" id="proj-file">
+                <button type="button" class="btn-chat-action" id="proj-file-rename" title="Rinomina" aria-label="Rinomina" data-i18n-title="proj.rename" data-i18n-aria-label="proj.rename"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                <span class="proj-file-gap" aria-hidden="true"></span>
+                <button type="button" class="btn-chat-action" id="proj-file-new" title="Nuovo file" aria-label="Nuovo file" data-i18n-title="proj.newFile" data-i18n-aria-label="proj.newFile"><i class="fa-solid fa-file-circle-plus" aria-hidden="true"></i></button>
+                <button type="button" class="btn-chat-action" id="proj-file-save" title="Salva" aria-label="Salva" data-i18n-title="proj.fileSave" data-i18n-aria-label="proj.fileSave"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i></button>
+                <button type="button" class="btn-chat-action" id="proj-file-save-as" title="Salva con un altro nome" aria-label="Salva con un altro nome" data-i18n-title="proj.fileSaveAs" data-i18n-aria-label="proj.fileSaveAs"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
+                <button type="button" class="btn-chat-action" id="proj-file-undo" title="Annulla" aria-label="Annulla" data-i18n-title="proj.fileUndo" data-i18n-aria-label="proj.fileUndo"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+                <button type="button" class="btn-chat-action" id="proj-file-redo" title="Ripeti" aria-label="Ripeti" data-i18n-title="proj.fileRedo" data-i18n-aria-label="proj.fileRedo"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+                <button type="button" class="btn-chat-action" id="proj-file-export" title="Esporta" aria-label="Esporta" data-i18n-title="proj.fileExport" data-i18n-aria-label="proj.fileExport"><i class="fa-solid fa-file-export" aria-hidden="true"></i></button>
+                <span class="proj-file-gap" aria-hidden="true"></span>
+                <button type="button" class="btn-chat-action" id="proj-file-zoom-out" title="Rimpicciolisci" aria-label="Rimpicciolisci" data-i18n-title="proj.zoomOut" data-i18n-aria-label="proj.zoomOut"><i class="fa-solid fa-minus" aria-hidden="true"></i></button>
+                <span class="proj-file-zoom" id="proj-file-zoom" aria-live="polite"></span>
+                <button type="button" class="btn-chat-action" id="proj-file-zoom-in" title="Ingrandisci" aria-label="Ingrandisci" data-i18n-title="proj.zoomIn" data-i18n-aria-label="proj.zoomIn"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+                <button type="button" class="btn-chat-action" id="proj-file-zoom-fit" title="Adatta" aria-label="Adatta" data-i18n-title="proj.zoomFit" data-i18n-aria-label="proj.zoomFit"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
+                <span class="proj-file-gap" aria-hidden="true"></span>
+                <button type="button" class="btn-chat-action" id="proj-file-settings" title="Impostazioni dell’editor" aria-label="Impostazioni dell’editor" data-i18n-title="proj.fileSettings" data-i18n-aria-label="proj.fileSettings"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
+              </div>
+            </div>
+            <!-- The Realtime character's notice while working here: part of the page's flow, so that the
+                 editor makes room for it (the editor of a local project is painted above the page). -->
+            <div id="code-notice" class="rt-notice-host"></div>
+            <div id="studio-error" class="chat-storage-error code-projects-error studio-error" role="alert" hidden><span id="studio-error-text"></span></div>
+            <div id="photo-error" class="chat-storage-error code-projects-error studio-error" role="alert" hidden><span id="photo-error-text"></span></div>
+
+            <!-- What is open: one environment at a time, the others kept as they are behind it. -->
+            <div class="proj-viewer" id="proj-viewer">
+              <div id="code-container" class="code-container proj-pane" data-env="code">
+                <p id="code-status" role="status" data-i18n="code.loading">Apertura editor…</p>
+                <div id="code-progress" class="code-progress-track" hidden><div class="code-progress-bar"></div></div>
+                <button type="button" id="code-retry" class="btn" hidden data-i18n="common.retry">Riprova</button>
+              </div>
+              <div id="studio-pane-photo" class="proj-pane" data-env="photo" hidden>
+            <div id="photo-stage" class="photo-stage">
+              <iframe id="photo-frame" class="photo-frame" title="photocraft" allow="clipboard-read; clipboard-write"></iframe>
+              <p id="photo-stage-status" class="photo-stage-status" role="status"></p>
+            </div>
+              </div>
+              <div id="studio-pane-text" class="proj-pane" data-env="writing" hidden>
+            <div class="studio-sheets">
+              <section class="studio-sheet studio-sheet-draft">
+                <header class="studio-sheet-head">
+                  <strong data-i18n="studio.draft">Brutta</strong>
+                  <span class="studio-sheet-hint" data-i18n="studio.draftHint">Scrivi come ti pare: un paragrafo per riga vuota.</span>
+                </header>
+                <textarea id="studio-draft" class="studio-draft" spellcheck="true" placeholder="Comincia a scrivere qui…" data-i18n-placeholder="studio.draftPlaceholder"></textarea>
+              </section>
+              <section class="studio-sheet studio-sheet-clean">
+                <header class="studio-sheet-head">
+                  <strong data-i18n="studio.clean">Bella</strong>
+                  <span class="studio-sheet-hint" data-i18n="studio.cleanHint">Sistemata dal modello; puoi correggerla a mano.</span>
+                </header>
+                <div id="studio-clean" class="studio-clean" aria-live="polite"></div>
+              </section>
+              <section class="studio-sheet studio-sheet-pdf" id="studio-pdf-pane" hidden>
+                <header class="studio-sheet-head">
+                  <strong data-i18n="studio.pdf">Impaginato</strong>
+                  <span class="studio-sheet-hint" id="studio-pdf-status"></span>
+                </header>
+                <div id="studio-pdf-pages" class="studio-pdf-pages"></div>
+                <div id="studio-pdf-help" class="studio-pdf-help" hidden>
+                  <p id="studio-pdf-help-text"></p>
+                  <button type="button" class="btn btn-primary" id="studio-tex-warm" hidden><i class="fa-solid fa-download"></i> <span data-i18n="studio.texWarm">Scarica i pacchetti TeX</span></button>
+                  <button type="button" class="btn" id="studio-pdf-log" hidden data-i18n="studio.showLog">Mostra il registro</button>
+                  <pre id="studio-pdf-log-text" class="studio-pdf-log" hidden></pre>
+                </div>
+              </section>
+            </div>
+              </div>
+              <p id="proj-viewer-note" class="proj-viewer-note" role="status" hidden></p>
+              <!-- A step of the history, chosen in the column: what it changed, over what is open. -->
+              <section id="code-history" class="code-history" hidden>
+                <div id="code-history-detail" class="code-history-detail"></div>
+              </section>
+            </div>
+
+            <!-- The toolbars of the environment in view, one over the other. -->
+            <div class="proj-toolbars" id="proj-toolbars">
+              <div class="proj-toolbar" id="proj-tb-writing" hidden>
+                <span class="proj-toolbar-name" data-i18n="studio.chapters">Capitoli</span>
+                <ol id="studio-chapter-list" class="studio-chapter-list"></ol>
+                <button type="button" class="btn-chat-action" id="studio-chapter-add" title="Nuovo capitolo" aria-label="Nuovo capitolo" data-i18n-title="studio.chapterAdd" data-i18n-aria-label="studio.chapterAdd"><i class="fa-solid fa-plus"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="conversation-resizer proj-resizer" id="proj-chat-resizer" role="separator" aria-orientation="vertical" aria-controls="code-ai-panel" title="Trascina per cambiare la larghezza" data-i18n-title="proj.resize"></div>
+          <aside id="code-ai-panel" class="code-ai-panel" aria-label="AI del progetto" data-i18n-aria-label="code.aiPanel">
+            <div class="code-ai-head">
+              <!-- Closes the chat to a strip and opens it again, like the button of the chats' column. Beside the editor and
+                   not over it: the editor of a folder project is painted above the page. -->
+              <button type="button" class="side-tool side-tool-collapse" id="code-ai-close" aria-expanded="true" title="Chiudi o apri la chat" data-i18n-title="proj.chatCollapse" aria-label="Chiudi o apri la chat" data-i18n-aria-label="proj.chatCollapse"><i class="fa-solid fa-chevron-right"></i></button>
+              <!-- Which project is not a choice: it is the one open, named in
+                   the bar above. This picks which chat about it. -->
+              <i class="fa-solid fa-comments" aria-hidden="true"></i>
+              <select id="code-chat-select" aria-label="Chat del progetto" data-i18n-aria-label="code.aiChats" title="Chat del progetto" data-i18n-title="code.aiChats"></select>
+              <button type="button" class="btn-chat-action" id="code-chat-new" title="Nuova chat sul progetto" aria-label="Nuova chat sul progetto" data-i18n-title="code.aiNewChat" data-i18n-aria-label="code.aiNewChat"><i class="fa-solid fa-plus"></i></button>
+            </div>
+            <div id="code-chat-mount" class="code-chat-mount"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="view-settings" class="app-view" style="display: none;">
+        <!-- Settings Sub-Navigation -->
+        <div class="settings-subnav-bar">
+          <button class="settings-subnav-tab active" id="settings-tab-btn-roles" onclick="window.switchSettingsSection('roles')">
+            <i class="fa-solid fa-layer-group"></i>
+            <span data-i18n="settings.tabRoles">Ruoli &amp; Tool</span>
+          </button>
+          <button class="settings-subnav-tab" id="settings-tab-btn-appearance" onclick="window.switchSettingsSection('appearance')">
+            <i class="fa-solid fa-palette"></i>
+            <span data-i18n="settings.tabAppearance">Aspetto &amp; Grafica</span>
+          </button>
+          <button class="settings-subnav-tab" id="settings-tab-btn-prompts" onclick="window.switchSettingsSection('prompts')">
+            <i class="fa-solid fa-terminal"></i>
+            <span data-i18n="settings.tabPrompts">Prompt e memoria</span>
+          </button>
+          <button class="settings-subnav-tab" id="settings-tab-btn-environment" onclick="window.switchSettingsSection('environment')">
+            <i class="fa-solid fa-server"></i>
+            <span data-i18n="settings.tabEnvironment">Ambiente &amp; Sicurezza</span>
+          </button>
+          <button class="settings-subnav-tab" id="settings-tab-btn-sections" onclick="window.switchSettingsSection('sections')">
+            <i class="fa-solid fa-table-cells-large"></i>
+            <span data-i18n="settings.tabSections">Sezioni</span>
+          </button>
+          <!-- The keys: the OpenRouter one and the makers' own, in the window of the key (opened from the badge on the computer, from here on the phone). -->
+          <button class="settings-subnav-tab settings-subnav-keys" id="settings-tab-btn-keys" onclick="document.getElementById('btn-open-key-modal')?.click()">
+            <i class="fa-solid fa-key"></i>
+            <span data-i18n="settings.tabKeys">Chiavi API</span>
+          </button>
+          <button class="settings-subnav-tab" id="settings-tab-btn-phone" onclick="window.switchSettingsSection('phone')">
+            <i class="fa-solid fa-mobile-screen"></i>
+            <span data-i18n="settings.tabPhone">Telefono</span>
+          </button>
+          <!-- What is set once for the whole app: the shared memories, the language, the key. -->
+          <div class="settings-subnav-general">
+            <button class="btn conversation-memory-button" id="btn-open-global-memory" title="Memorie condivise tra tutte le chat" data-i18n-title="chat.globalMemoriesTooltip"><i class="fa-solid fa-brain"></i> <span data-i18n="chat.globalMemoriesBtn">Memorie condivise</span></button>
+            <button type="button" class="btn btn-header-help" id="btn-toggle-help" aria-pressed="true" title="Mostra o nascondi i punti di aiuto" aria-label="Mostra o nascondi i punti di aiuto" data-i18n-title="help.toggle" data-i18n-aria-label="help.toggle">
+              <i class="fa-solid fa-circle-question"></i>
+            </button>
+            <button type="button" class="btn btn-header-lang" id="btn-toggle-lang" title="Cambia lingua (IT / EN)" aria-label="Cambia lingua" data-i18n-title="nav.langTooltip" data-i18n-aria-label="nav.langTooltip">
+              <i class="fa-solid fa-globe"></i>
+              <span id="label-current-lang">IT</span>
+            </button>
+            <div class="api-key-badge" id="btn-open-key-modal" title="Configura chiave API OpenRouter" data-i18n-title="nav.apiKeyTooltip">
+              <i class="fa-solid fa-key key-icon"></i>
+              <span id="label-api-key" data-i18n="nav.apiKey">API Key: Public</span>
+              <span class="status-indicator" id="status-indicator-key"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-subview-container">
+          <!-- Subview A: Roles & Tool Suites Configuration -->
+          <div id="settings-subview-roles" class="settings-split-layout">
+            <!-- Sidebar: Roles & Tools Selection -->
+            <aside class="settings-sidebar">
+              <div class="settings-sidebar-header">
+                <div class="settings-sidebar-title">
+                  <i class="fa-solid fa-layer-group"></i>
+                  <span data-i18n="settings.tabRoles">Ruoli &amp; Tool</span>
+                </div>
+                <span class="settings-sidebar-tag">Defaults</span>
+              </div>
+              
+              <div class="settings-sidebar-list" id="settings-sidebar-items">
+                <!-- Dynamically populated -->
+              </div>
+              <!-- The models every role here is picked from. -->
+              <div class="settings-catalog-sync">
+                <button type="button" class="btn" id="btn-sync-catalog" title="Scarica di nuovo l'elenco dei modelli da OpenRouter" data-i18n-title="settings.catalogSyncTooltip">
+                  <i class="fa-solid fa-arrows-rotate" id="icon-sync"></i>
+                  <span data-i18n="settings.catalogSync">Aggiorna catalogo modelli</span>
+                </button>
+                <span id="label-catalog-updated" class="settings-catalog-updated"></span>
+              </div>
+            </aside>
+
+            <!-- Workspace: Model Search, Filtering & Assignment -->
+            <section class="settings-workspace" id="settings-main-workspace">
+              <!-- Dynamically populated -->
+            </section>
+          </div>
+
+          <!-- Subview B: Appearance & Customization Section -->
+          <div id="settings-subview-appearance" class="appearance-workspace" style="display: none;">
+            <!-- Dynamically populated by renderAppearanceSection() -->
+          </div>
+
+          <!-- Subview C: System Prompts Section (APIC Style) -->
+          <div id="settings-subview-prompts" class="prompts-workspace" style="display: none;">
+            <!-- Dynamically populated by renderPromptsSection() -->
+          </div>
+
+          <!-- Subview D: Environment, Pre-installed Packages & Caching/Privacy -->
+          <div id="settings-subview-environment" class="environment-workspace" style="display: none;">
+            <!-- Dynamically populated by renderEnvironmentSection() -->
+          </div>
+
+          <!-- Subview E: the phone bridge, drawn by realtime-phone.js -->
+          <div id="settings-subview-phone" class="environment-workspace" style="display: none;"></div>
+
+          <!-- Subview F: local models and the Hugging Face browser, drawn by local-models.js -->
+
+          <!-- Subview G: which sections of the app are loaded, drawn by sections.js -->
+          <div id="settings-subview-sections" class="environment-workspace" style="display: none;"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Inspector Slide-out Drawer (Model Details & Payload) -->
+  <dialog id="chat-rename-dialog" class="workspace-dialog rename-dialog" aria-labelledby="rename-dialog-title">
+    <form id="chat-rename-form">
+      <h2 id="rename-dialog-title" data-i18n="dialog.renameTitle">Rinomina chat</h2>
+      <label class="memory-field" for="chat-rename-input"><span data-i18n="dialog.renameLabel">Titolo</span><input id="chat-rename-input" maxlength="120" required></label>
+      <div class="dialog-actions"><button type="button" class="btn" data-close-dialog="chat-rename-dialog" data-i18n="common.cancel">Annulla</button><button class="btn btn-primary" type="submit" data-i18n="common.save">Salva</button></div>
+    </form>
+  </dialog>
+  <dialog id="chat-confirm-dialog" class="workspace-dialog confirm-dialog" aria-labelledby="confirm-dialog-title">
+    <div class="confirm-dialog-body">
+      <div class="confirm-dialog-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div class="confirm-dialog-main">
+        <h2 id="confirm-dialog-title" data-i18n="dialog.confirmDeleteTitle">Elimina chat</h2>
+        <p id="confirm-dialog-message">Eliminare questa chat?</p>
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn" id="confirm-dialog-cancel" data-i18n="common.cancel">Annulla</button>
+      <button type="button" class="btn btn-danger-action" id="confirm-dialog-ok" data-i18n="common.delete">Elimina</button>
+    </div>
+  </dialog>
+  <!-- Code: what the user approved in semi mode, per project, and how to forget it -->
+  <dialog id="code-perm-dialog" class="workspace-dialog code-perm-dialog" aria-labelledby="code-perm-title">
+    <div class="code-new-heading">
+      <h2 id="code-perm-title" data-i18n="code.permList">Approvazioni ricordate</h2>
+      <button type="button" class="btn-chat-action" id="code-perm-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p class="code-new-hint" data-i18n="code.permListHint">In modalità semi, un'azione che approvi passa da sola le volte successive. Qui c'è l'elenco di questo progetto.</p>
+    <ul id="code-perm-items" class="code-perm-items"></ul>
+    <div class="dialog-actions"><button type="button" class="btn" id="code-perm-forget-all" data-i18n="code.permForgetAll">Dimentica tutto</button></div>
+  </dialog>
+  <!-- Foto: the folder's settings — photocraft's build, the models, the default permission -->
+  <dialog id="photo-settings-dialog" class="workspace-dialog code-new-dialog" aria-labelledby="photo-settings-title">
+    <div class="code-new-heading">
+      <h2 id="photo-settings-title" data-i18n="photo.settings">Impostazioni della cartella</h2>
+      <button type="button" class="btn-chat-action" id="photo-settings-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="code-new-step">
+      <div class="studio-tex-box">
+        <strong data-i18n="photo.appTitle">photocraft</strong>
+        <p id="photo-app-status" class="code-new-hint"></p>
+        <div class="code-github-account-actions">
+          <button type="button" class="btn" id="photo-app-check"><i class="fa-solid fa-rotate"></i> <span data-i18n="photo.appCheck">Controlla le release</span></button>
+        </div>
+        <p class="code-new-hint" data-i18n="photo.appHint">È la build di SynthOrg dal sorgente dell’ultima release, con i nostri colori. Aggiornarla vuol dire aggiornare SynthOrg: qui si vede solo se upstream è più avanti.</p>
+      </div>
+      <div class="studio-tex-box">
+        <strong data-i18n="photo.modelsTitle">Modello per togliere lo sfondo</strong>
+        <label class="memory-field" for="photo-set-model"><span data-i18n="photo.modelLabel">Modello</span><select id="photo-set-model"></select></label>
+        <p id="photo-models-status" class="code-new-hint"></p>
+        <div class="code-github-account-actions">
+          <button type="button" class="btn" id="photo-models-warm"><i class="fa-solid fa-download"></i> <span data-i18n="photo.modelWarm">Scarica il modello</span></button>
+          <button type="button" class="btn" id="photo-models-drop"><i class="fa-solid fa-trash-can"></i> <span data-i18n="photo.modelDrop">Cancella i modelli</span></button>
+        </div>
+        <p class="code-new-hint" data-i18n="photo.modelsHint">Scaricato una volta da un container con la rete, senza nessuna tua foto dentro, e verificato con la sua impronta; la funzione gira in un container senza rete e lo legge da lì.</p>
+      </div>
+      <div class="studio-tex-box">
+        <strong data-i18n="photo.objectTitle">Modello per l’oggetto indicato</strong>
+        <p id="photo-object-status" class="code-new-hint"></p>
+        <div class="code-github-account-actions">
+          <button type="button" class="btn" id="photo-object-warm"><i class="fa-solid fa-download"></i> <span data-i18n="photo.modelWarm">Scarica il modello</span></button>
+        </div>
+        <p class="code-new-hint" data-i18n="photo.objectHint">Per Select › Object (Model): traccia una selezione attorno a un oggetto e il modello seleziona quell’oggetto. Si scarica come gli altri.</p>
+      </div>
+      <div class="studio-tex-box">
+        <strong data-i18n="photo.refineTitle">Bordi</strong>
+        <label class="synth-toggle-wrapper" for="photo-set-refine"><span class="synth-switch"><input type="checkbox" id="photo-set-refine"><span class="synth-slider"></span></span> <span data-i18n="photo.refine">Rifinisci i bordi sulla foto</span></label>
+        <p class="code-new-hint" data-i18n="photo.refineHint">Il modello guarda la foto rimpicciolita, quindi i bordi della sua maschera sono quelli di un ingrandimento. Acceso, dopo il modello photocraft li riporta sui bordi veri della foto a piena dimensione (lo stesso calcolo di Select and Mask). Spento, resta la maschera del modello com’è.</p>
+      </div>
+      <p id="photo-settings-error" class="code-new-error" role="alert"></p>
+    </div>
+  </dialog>
+  <!-- Studio: a chapter's title, for a new one or a rename -->
+  <!-- Export from the bar of a project: what will be written is shown first, and written once confirmed -->
+  <dialog id="proj-export-dialog" class="workspace-dialog proj-export-dialog" aria-labelledby="proj-export-title">
+    <form id="proj-export-form" novalidate>
+      <div class="code-new-heading">
+        <h2 id="proj-export-title" data-i18n="proj.exportTitle">Esporta come PNG</h2>
+        <button type="button" class="btn-chat-action" id="proj-export-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="proj-export-preview"><img id="proj-export-image" alt=""></div>
+      <p id="proj-export-size" class="proj-export-size"></p>
+      <label class="memory-field" for="proj-export-name"><span data-i18n="proj.exportName">Nome del file</span><input id="proj-export-name" maxlength="200" autocomplete="off" spellcheck="false"></label>
+      <p class="proj-export-hint" data-i18n="proj.exportHint">Viene scritto nella cartella del progetto.</p>
+      <p id="proj-export-error" class="code-new-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn" id="proj-export-cancel" data-i18n="common.cancel">Annulla</button>
+        <button type="submit" class="btn btn-primary" id="proj-export-confirm" data-i18n="proj.fileExport">Esporta</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="studio-chapter-dialog" class="workspace-dialog" aria-labelledby="studio-chapter-title">
+    <form id="studio-chapter-form" novalidate>
+      <div class="code-new-heading">
+        <h2 id="studio-chapter-title" data-i18n="studio.chapterAdd">Nuovo capitolo</h2>
+        <button type="button" class="btn-chat-action" id="studio-chapter-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <label class="memory-field" for="studio-chapter-name"><span data-i18n="studio.titleLabel">Titolo</span><input id="studio-chapter-name" maxlength="200" autocomplete="off"></label>
+      <p id="studio-chapter-error" class="code-new-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn" id="studio-chapter-cancel" data-i18n="common.cancel">Annulla</button>
+        <button type="submit" class="btn btn-primary" data-i18n="common.save">Salva</button>
+      </div>
+    </form>
+  </dialog>
+  <!-- Studio: the text's settings — what it is, how the correction runs, how much map the model gets, the TeX packages -->
+  <dialog id="studio-settings-dialog" class="workspace-dialog code-new-dialog" aria-labelledby="studio-settings-title">
+    <form id="studio-settings-form" novalidate>
+      <div class="code-new-heading">
+        <h2 id="studio-settings-title" data-i18n="studio.settings">Impostazioni del testo</h2>
+        <button type="button" class="btn-chat-action" id="studio-settings-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="code-new-step">
+        <label class="memory-field" for="studio-set-title"><span data-i18n="studio.titleLabel">Titolo</span><input id="studio-set-title" maxlength="200"></label>
+        <label class="memory-field" for="studio-set-author"><span data-i18n="studio.authorLabel">Autore</span><input id="studio-set-author" maxlength="200"></label>
+        <div class="studio-settings-row">
+          <label class="memory-field" for="studio-set-type"><span data-i18n="studio.typeLabel">Tipo</span>
+            <select id="studio-set-type"><option value="romanzo" data-i18n="studio.typeRomanzo">Romanzo</option><option value="copione" data-i18n="studio.typeCopione">Copione</option><option value="saggio" data-i18n="studio.typeSaggio">Saggio</option></select>
+          </label>
+          <label class="memory-field" for="studio-set-language"><span data-i18n="studio.languageLabel">Lingua del testo</span>
+            <select id="studio-set-language"><option value="it" data-i18n="studio.langIt">Italiano</option><option value="en" data-i18n="studio.langEn">Inglese</option></select>
+          </label>
+        </div>
+        <label class="memory-field" for="studio-set-pause"><span data-i18n="studio.pauseLabel">Pausa prima di sistemare (secondi)</span><input id="studio-set-pause" type="number" min="1" max="120" step="1"></label>
+        <p class="code-new-hint" data-i18n="studio.pauseHint">Con «Sistema mentre scrivo» acceso, dopo questa pausa senza battute i paragrafi cambiati vanno al modello.</p>
+        <div class="studio-settings-row">
+          <label class="memory-field" for="studio-set-cap"><span data-i18n="studio.capLabel">Tetto della mappa (token)</span><input id="studio-set-cap" type="number" min="4000" max="2000000" step="1000"></label>
+          <label class="memory-field" for="studio-set-share"><span data-i18n="studio.shareLabel">Quota della mappa</span><input id="studio-set-share" type="number" min="0" max="0.9" step="0.05"></label>
+        </div>
+        <p class="code-new-hint" data-i18n="studio.capHint">La mappa del testo data al modello a ogni turno della chat resta entro tetto × quota: parti e capitoli riassunti, più fini vicino al capitolo in lavorazione. Il resto lo apre con i suoi strumenti.</p>
+        <div class="studio-tex-box">
+          <strong data-i18n="studio.texTitle">Pacchetti TeX</strong>
+          <p id="studio-tex-status" class="code-new-hint"></p>
+          <div class="code-github-account-actions">
+            <button type="button" class="btn" id="studio-tex-warm-settings"><i class="fa-solid fa-download"></i> <span data-i18n="studio.texWarm">Scarica i pacchetti TeX</span></button>
+            <button type="button" class="btn" id="studio-tex-drop"><i class="fa-solid fa-trash-can"></i> <span data-i18n="studio.texDrop">Cancella i pacchetti</span></button>
+          </div>
+          <p class="code-new-hint" data-i18n="studio.texHint">Scaricati una volta da un container con la rete, senza nessun tuo testo dentro; le impaginazioni girano in un container senza rete e li leggono da lì.</p>
+        </div>
+        <p id="studio-settings-error" class="code-new-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="studio-settings-cancel" data-i18n="common.cancel">Annulla</button>
+          <button type="submit" class="btn btn-primary" data-i18n="common.save">Salva</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+  <!-- Studio: what to write into the project's folder -->
+  <dialog id="studio-export-dialog" class="workspace-dialog" aria-labelledby="studio-export-title">
+    <div class="code-new-heading">
+      <h2 id="studio-export-title" data-i18n="studio.export">Esporta nella cartella del progetto</h2>
+      <button type="button" class="btn-chat-action" id="studio-export-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p class="code-new-hint" data-i18n="studio.exportHint">Il file va nella sottocartella «esportazioni» del progetto, col titolo del testo.</p>
+    <div class="code-kind-grid studio-export-grid">
+      <button type="button" class="code-kind-option" data-what="pdf"><span class="code-kind-icon"><i class="fa-solid fa-file-pdf"></i></span><span class="code-kind-title">PDF</span><span class="code-kind-desc" data-i18n="studio.exportPdf">Le pagine impaginate (serve aver impaginato).</span></button>
+      <button type="button" class="code-kind-option" data-what="tex"><span class="code-kind-icon"><i class="fa-solid fa-file-code"></i></span><span class="code-kind-title">LaTeX</span><span class="code-kind-desc" data-i18n="studio.exportTex">Il sorgente .tex, per modificarlo altrove.</span></button>
+      <button type="button" class="code-kind-option" data-what="md"><span class="code-kind-icon"><i class="fa-solid fa-file-lines"></i></span><span class="code-kind-title">Markdown</span><span class="code-kind-desc" data-i18n="studio.exportMd">La bella in testo semplice.</span></button>
+    </div>
+    <p id="studio-export-result" class="code-new-hint"></p>
+  </dialog>
+  <!-- Studio: the map of the text, node by node, as the model is given it -->
+  <dialog id="studio-map-dialog" class="workspace-dialog code-new-dialog" aria-labelledby="studio-map-title">
+    <div class="code-new-heading">
+      <h2 id="studio-map-title" data-i18n="studio.map">La mappa del testo</h2>
+      <button type="button" class="btn-chat-action" id="studio-map-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p class="code-new-hint" data-i18n="studio.mapHint">Riassunti con titolo, per scena, capitolo e parte, scritti in sottofondo dal modello Microtask quando il testo cambia. Il modello della chat li riceve entro il tetto e apre quello che gli serve.</p>
+    <div id="studio-map-list" class="studio-map-list"></div>
+    <div class="dialog-actions"><button type="button" class="btn" id="studio-map-refresh"><i class="fa-solid fa-rotate"></i> <span data-i18n="studio.mapRefresh">Aggiorna adesso</span></button></div>
+  </dialog>
+  <!-- Lab: a new project. Each row is a field with its name beside it; under them, the environments to switch on. -->
+  <dialog id="lab-new-dialog" class="workspace-dialog lab-new-dialog" aria-labelledby="lab-new-title">
+    <form id="lab-new-form" novalidate>
+      <div class="code-new-heading">
+        <h2 id="lab-new-title" data-i18n="code.newDialogTitle">Nuovo progetto</h2>
+        <button type="button" class="btn-chat-action" id="lab-new-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="lab-rows">
+        <div class="lab-row">
+          <input id="lab-new-name" class="lab-field" maxlength="80" autocomplete="off" aria-labelledby="lab-label-name">
+          <span class="lab-label" id="lab-label-name" data-i18n="lab.name">Nome progetto</span>
+        </div>
+        <div class="lab-row">
+          <select id="lab-new-repo" class="lab-field" aria-labelledby="lab-label-repo"></select>
+          <span class="lab-label" id="lab-label-repo" data-i18n="lab.repo">Repo</span>
+        </div>
+        <div class="lab-row">
+          <select id="lab-new-branch" class="lab-field" aria-labelledby="lab-label-branch"></select>
+          <span class="lab-label" id="lab-label-branch" data-i18n="code.repoBranch">Ramo</span>
+        </div>
+        <div class="lab-row">
+          <div class="lab-choice" id="lab-new-perm" role="radiogroup" aria-labelledby="lab-label-perm">
+            <button type="button" role="radio" data-perm="auto" data-i18n="lab.permAuto">Auto</button>
+            <button type="button" role="radio" data-perm="semi" data-i18n="code.permSemi">Semi</button>
+            <button type="button" role="radio" data-perm="manual" data-i18n="code.permManual">Manuale</button>
+          </div>
+          <span class="lab-label" id="lab-label-perm" data-i18n="lab.perm">Permessi</span>
+        </div>
+        <div class="lab-row">
+          <div class="lab-choice" id="lab-new-kind" role="radiogroup" aria-labelledby="lab-label-where">
+            <button type="button" role="radio" data-kind="podman" data-i18n="lab.kindPod">Pod</button>
+            <button type="button" role="radio" data-kind="local" data-i18n="code.folderLabel">Cartella</button>
+          </div>
+          <span class="lab-label" id="lab-label-where" data-i18n="lab.where">Dove gira</span>
+        </div>
+        <div class="lab-row" id="lab-new-folder-row" hidden>
+          <div class="lab-folder">
+            <input id="lab-new-folder" class="lab-field" readonly placeholder="Nessuna cartella scelta" data-i18n-placeholder="code.folderPlaceholder" aria-labelledby="lab-label-folder">
+            <button type="button" class="btn" id="lab-new-browse"><i class="fa-solid fa-folder-tree"></i> <span data-i18n="code.chooseFolder">Scegli…</span></button>
+          </div>
+          <span class="lab-label" id="lab-label-folder" data-i18n="code.folderLabel">Cartella</span>
+        </div>
+      </div>
+      <p class="lab-envs-title" id="lab-label-envs" data-i18n="lab.envs">Ambienti</p>
+      <div class="lab-envs" id="lab-new-envs" role="group" aria-labelledby="lab-label-envs">
+        <button type="button" class="lab-env" data-env="code" aria-pressed="false" data-i18n="lab.env.code">Code</button>
+        <button type="button" class="lab-env" data-env="photo" aria-pressed="false" data-i18n="lab.env.photo">Photo</button>
+        <button type="button" class="lab-env" data-env="writing" aria-pressed="false" data-i18n="lab.env.writing">Writing</button>
+      </div>
+      <p class="code-new-hint" id="lab-new-hint" data-i18n="lab.podHint">In un pod, i file di Photo e Writing stanno tra gli artefatti del progetto, su questo computer: nel pod li porti trascinandoli.</p>
+      <p id="lab-new-error" class="code-new-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn" id="lab-new-cancel" data-i18n="common.cancel">Annulla</button>
+        <button type="submit" class="btn btn-primary" id="lab-new-submit" data-i18n="studio.create">Crea</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Lab: the GitHub account. Which repository a project follows is chosen in the project. -->
+  <dialog id="lab-github-dialog" class="workspace-dialog code-new-dialog" aria-labelledby="lab-github-heading">
+    <div class="code-new-heading">
+      <h2 id="lab-github-heading">GitHub</h2>
+      <button type="button" class="btn-chat-action" id="lab-github-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="code-github-account">
+      <span class="code-github-avatar"><i class="fa-brands fa-github"></i></span>
+      <div class="code-github-account-text">
+        <strong id="lab-github-title" data-i18n="code.githubDisconnected">GitHub non collegato</strong>
+        <span id="lab-github-desc"></span>
+      </div>
+      <div class="code-github-account-actions">
+        <button type="button" class="btn btn-primary" id="lab-github-connect"><i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-i18n="code.githubConnect">Collega GitHub</span></button>
+        <button type="button" class="btn" id="lab-github-manage" hidden><i class="fa-solid fa-sliders"></i> <span data-i18n="code.githubManage">Gestisci repository</span></button>
+        <button type="button" class="btn-chat-action" id="lab-github-disconnect" hidden title="Scollega GitHub" aria-label="Scollega GitHub" data-i18n-title="code.githubDisconnect" data-i18n-aria-label="code.githubDisconnect"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+    <p id="lab-github-error" class="code-new-error" role="alert"></p>
+  </dialog>
+
+
+  <!-- Code: the GitHub account and the repository of a project. One place,
+       opened from the bar of the open project. -->
+  <dialog id="code-repo-dialog" class="workspace-dialog code-new-dialog" aria-labelledby="code-repo-title">
+    <form id="code-repo-form" novalidate>
+      <div class="code-new-heading">
+        <h2 id="code-repo-title" data-i18n="code.repoDialogTitle">Repository del progetto</h2>
+        <button type="button" class="btn-chat-action" id="code-repo-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="code-new-step">
+        <div class="code-github-account">
+          <span class="code-github-avatar"><i class="fa-brands fa-github"></i></span>
+          <div class="code-github-account-text">
+            <strong id="code-github-title" data-i18n="code.githubDisconnected">GitHub non collegato</strong>
+            <span id="code-github-desc"></span>
+          </div>
+          <div class="code-github-account-actions">
+            <button type="button" class="btn btn-primary" id="code-github-connect"><i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-i18n="code.githubConnect">Collega GitHub</span></button>
+            <button type="button" class="btn" id="code-github-manage" hidden><i class="fa-solid fa-sliders"></i> <span data-i18n="code.githubManage">Gestisci repository</span></button>
+            <button type="button" class="btn-chat-action" id="code-github-disconnect" hidden title="Scollega GitHub" aria-label="Scollega GitHub" data-i18n-title="code.githubDisconnect" data-i18n-aria-label="code.githubDisconnect"><i class="fa-solid fa-right-from-bracket"></i></button>
+          </div>
+        </div>
+        <div class="memory-field">
+          <span data-i18n="code.repoLabel">Repository GitHub</span>
+          <div class="code-folder-row">
+            <select id="code-repo-select" aria-label="Repository" disabled></select>
+            <button type="button" class="btn" id="code-github-refresh" title="Aggiorna elenco" aria-label="Aggiorna elenco" data-i18n-title="code.githubRefresh" data-i18n-aria-label="code.githubRefresh" disabled><i class="fa-solid fa-arrows-rotate"></i></button>
+          </div>
+        </div>
+        <!-- How the project follows the repository: all of it, or one branch. -->
+        <fieldset class="code-repo-mode" id="code-repo-mode">
+          <legend data-i18n="code.repoModeLabel">Cosa segue il progetto</legend>
+          <label class="code-repo-mode-option"><input type="radio" name="code-repo-mode" value="full" checked>
+            <span><strong data-i18n="code.repoModeFull">Repository intera</strong><small data-i18n="code.repoModeFullDesc">Scarica tutti i rami, con il principale come primo. Ci si sposta tra i rami dall’intestazione sopra i file.</small></span></label>
+          <label class="code-repo-mode-option"><input type="radio" name="code-repo-mode" value="branch">
+            <span><strong data-i18n="code.repoModeBranch">Un solo ramo</strong><small data-i18n="code.repoModeBranchDesc">Scarica solo il ramo scelto, anche il principale. Scarica e Carica riguardano solo quello.</small></span></label>
+        </fieldset>
+        <label class="memory-field" for="code-repo-branch" id="code-repo-branch-row" hidden><span data-i18n="code.repoBranch">Ramo</span>
+          <select id="code-repo-branch"></select>
+        </label>
+        <label class="memory-field" for="code-repo-branch-new" id="code-repo-branch-new-row" hidden><span data-i18n="code.repoBranchNewName">Nome del nuovo ramo</span>
+          <input id="code-repo-branch-new" maxlength="200" spellcheck="false" autocomplete="off">
+        </label>
+        <p class="code-new-hint" id="code-repo-hint"></p>
+        <p id="code-repo-error" class="code-new-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="code-repo-none"><i class="fa-solid fa-link-slash"></i> <span data-i18n="code.repoNoneAction">Nessuna repository</span></button>
+          <button type="button" class="btn" id="code-repo-open" hidden><i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-i18n="code.openOnGithub">Apri su GitHub</span></button>
+          <button type="submit" class="btn btn-primary" id="code-repo-submit"><i class="fa-solid fa-check"></i> <span id="code-repo-submit-text" data-i18n="code.repoConfirm">Collega</span></button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Code: the branch here and on GitHub both have steps of their own. Nothing is merged: the user chooses. -->
+  <dialog id="code-diverged-dialog" class="workspace-dialog code-git-dialog" aria-labelledby="code-diverged-title">
+    <form id="code-diverged-form" novalidate>
+      <div class="code-new-heading">
+        <h2 id="code-diverged-title" data-i18n="code.divergedTitle">Il ramo è diverso su GitHub</h2>
+        <button type="button" class="btn-chat-action" id="code-diverged-close" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="code-new-step">
+        <p class="code-new-lead" id="code-diverged-lead"></p>
+        <fieldset class="code-repo-mode">
+          <label class="code-repo-mode-option"><input type="radio" name="code-diverged-keep" value="branch" checked>
+            <span><strong data-i18n="code.divergedKeepBranch">Tieni il lavoro di qui su un ramo nuovo</strong><small id="code-diverged-branch-desc"></small></span></label>
+          <label class="code-repo-mode-option"><input type="radio" name="code-diverged-keep" value="github">
+            <span><strong data-i18n="code.divergedKeepGithub">Tieni la versione di GitHub</strong><small id="code-diverged-github-desc"></small></span></label>
+        </fieldset>
+        <label class="memory-field" for="code-diverged-name" id="code-diverged-name-row"><span data-i18n="code.repoBranchNewName">Nome del nuovo ramo</span>
+          <input id="code-diverged-name" maxlength="200" spellcheck="false" autocomplete="off">
+        </label>
+        <p id="code-diverged-error" class="code-new-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="code-diverged-cancel" data-i18n="common.cancel">Annulla</button>
+          <button type="submit" class="btn btn-primary" id="code-diverged-submit"><i class="fa-solid fa-check"></i> <span data-i18n="common.confirm">Conferma</span></button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialog 1: Memorie Condivise (Globali) -->
+  <!-- The artifacts of every chat, by chat; opened from the composer it picks the ones to bring into the open chat. -->
+  <dialog id="artifact-library-dialog" class="workspace-dialog artifact-library" aria-labelledby="artifact-library-title">
+    <div class="memory-dialog-heading">
+      <div class="memory-dialog-header-info">
+        <h2 id="artifact-library-title"><i class="fa-solid fa-shapes" style="color: var(--primary);"></i> <span id="artifact-library-title-text"></span></h2>
+        <p id="artifact-library-desc"></p>
+      </div>
+      <button class="btn-chat-action" data-close-dialog="artifact-library-dialog" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <input id="artifact-library-search" type="search" maxlength="200" placeholder="Cerca artefatto per nome…" aria-label="Cerca artefatto per nome" data-i18n-placeholder="artifacts.searchPlaceholder" data-i18n-aria-label="artifacts.searchPlaceholder">
+    <div id="artifact-library-list" class="artifact-library-list"></div>
+    <div class="artifact-library-foot" id="artifact-library-foot" hidden>
+      <span id="artifact-library-count"></span>
+      <button type="button" class="btn btn-primary" id="artifact-library-import" disabled data-i18n="shell.import">Importa</button>
+    </div>
+  </dialog>
+
+  <dialog id="global-memory-dialog" class="workspace-dialog memory-dialog" aria-labelledby="global-memory-dialog-title">
+    <div class="memory-dialog-heading">
+      <div class="memory-dialog-header-info">
+        <h2 id="global-memory-dialog-title"><i class="fa-solid fa-globe" style="color: var(--primary);"></i> <span data-i18n="memory.sharedTitle">Memorie Condivise (Dossier Globale)</span></h2>
+        <p id="global-memory-dialog-desc" data-i18n="memory.sharedDesc">Dossier utente unificato iniettato come singolo documento Markdown in tutte le conversazioni.</p>
+      </div>
+      <button class="btn-chat-action" data-close-dialog="global-memory-dialog" aria-label="Chiudi memoria" data-i18n-aria-label="memory.closeAriaLabel"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Guida esplicativa del Dossier Globale -->
+    <div class="memory-guide-banner">
+      <div class="memory-guide-icon"><i class="fa-solid fa-circle-info"></i></div>
+      <div class="memory-guide-text">
+        <strong data-i18n="memory.globalGuideTitle">Come funzionano le Memorie Generali:</strong>
+        <p data-i18n="memory.globalGuideText">Le memorie globali definiscono il tuo profilo permanente: ruolo, preferenze operative, progetti aperti e storico completato. Vengono iniettate nel prompt come un unico documento compatto, ordinato per sezioni logiche. Le card nella lista sottostante sono una suddivisione visuale per facilitare consultazione e aggiornamento.</p>
+      </div>
+    </div>
+
+    <!-- Barra di attivazione Globale indipendente -->
+    <div class="memory-activation-bar">
+      <label class="synth-toggle-wrapper" for="toggle-global-memory-active">
+        <span class="synth-switch"><input type="checkbox" id="toggle-global-memory-active" checked><span class="synth-slider"></span></span>
+        <span data-i18n-html="memory.toggleGlobalActive"><strong>Abilita Dossier Memoria Globale</strong> (inietta il profilo in tutte le chat)</span>
+      </label>
+    </div>
+
+    <div class="memory-dialog-body">
+      <section class="memory-library" aria-label="Memorie condivise salvate" data-i18n-aria-label="memory.savedAriaLabel">
+        <input id="global-memory-search" type="search" placeholder="Cerca nel dossier globale…" aria-label="Cerca nel dossier globale" maxlength="200" data-i18n-placeholder="memory.globalSearchPlaceholder" data-i18n-aria-label="memory.globalSearchPlaceholder">
+        <!-- Filtri rapidi per sezione precostruita -->
+        <div class="memory-section-pills" id="global-section-pills">
+          <button type="button" class="section-pill active" data-section="all" data-i18n="memory.sectionAll">Tutte</button>
+          <button type="button" class="section-pill" data-section="user_profile" data-i18n="memory.sectionProfile">Profilo</button>
+          <button type="button" class="section-pill" data-section="preferences" data-i18n="memory.sectionPreferences">Preferenze</button>
+          <button type="button" class="section-pill" data-section="active_projects" data-i18n="memory.sectionActiveProjects">Progetti Attivi</button>
+          <button type="button" class="section-pill" data-section="archive_projects" data-i18n="memory.sectionArchive">Storico</button>
+          <button type="button" class="section-pill" data-section="general_notes" data-i18n="memory.sectionNotes">Note</button>
+        </div>
+        <div id="global-memory-list" class="memory-list-scroll"></div>
+      </section>
+
+      <form id="global-memory-form" class="memory-editor">
+        <div class="memory-editor-heading">
+          <h3 id="global-memory-editor-title" data-i18n="memory.newSharedTitle">Nuova voce dossier</h3>
+          <button id="btn-global-memory-new" type="button" class="btn" data-i18n="memory.btnNew">Nuova</button>
+        </div>
+        <div class="memory-scope-indicator">
+          <span class="memory-scope-badge"><i class="fa-solid fa-globe"></i> <span data-i18n="memory.globalDossierBadge">Dossier Utente Globale</span></span>
+        </div>
+
+        <label class="memory-field" for="global-memory-section">
+          <span data-i18n="memory.sectionSelectLabel">Sezione Dossier</span>
+          <select id="global-memory-section">
+            <option value="user_profile" data-i18n="memory.optProfile">Profilo & Contesto Lavorativo (Ruolo, competenze, ambiente)</option>
+            <option value="preferences" data-i18n="memory.optPreferences">Preferenze & Abitudini Operative (Stile, pattern, vincoli)</option>
+            <option value="active_projects" data-i18n="memory.optActiveProjects">Progetti Attivi & Milestone (Lavori correnti in corso)</option>
+            <option value="archive_projects" data-i18n="memory.optArchiveProjects">Progetti Conclusi & Storico (Risultati, decisioni chiuse)</option>
+            <option value="general_notes" selected data-i18n="memory.optNotes">Note & Direttive Generali (Fatti trasversali)</option>
+          </select>
+        </label>
+
+        <label class="memory-field" for="global-memory-content"><span data-i18n="memory.noteLabel">Contenuto Nota</span><textarea id="global-memory-content" rows="6" maxlength="2000" required placeholder="Es. L'utente sviluppa principalmente applicazioni desktop in JS/Node.js e preferisce codice modulare senza librerie esterne non richieste." data-i18n-placeholder="memory.notePlaceholder"></textarea></label>
+        <label class="synth-toggle-wrapper" for="global-memory-enabled"><span class="synth-switch"><input type="checkbox" id="global-memory-enabled" checked><span class="synth-slider"></span></span> <span data-i18n="memory.activeLabel">Voce attiva (inclusa nel dossier)</span></label>
+        <p id="global-memory-form-error" role="alert"></p>
+        <button class="btn btn-primary" id="btn-global-memory-save" type="submit" data-i18n="memory.btnSave">Salva voce dossier</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Dialog 2: Memorie di questa Chat (Locali) -->
+  <dialog id="chat-memory-dialog" class="workspace-dialog memory-dialog" aria-labelledby="chat-memory-dialog-title">
+    <div class="memory-dialog-heading">
+      <div class="memory-dialog-header-info">
+        <h2 id="chat-memory-dialog-title"><i class="fa-solid fa-comments" style="color: var(--primary);"></i> <span data-i18n="memory.chatScopeTitle">Memoria di questa chat</span></h2>
+        <p id="chat-memory-dialog-desc" data-i18n="memory.chatDialogDesc">Cronologia automatica dei turni con ID messaggio collegato per consultazione contestuale.</p>
+      </div>
+      <button class="btn-chat-action" data-close-dialog="chat-memory-dialog" aria-label="Chiudi memoria" data-i18n-aria-label="memory.closeAriaLabel"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Guida esplicativa della Memoria Chat -->
+    <div class="memory-guide-banner">
+      <div class="memory-guide-icon"><i class="fa-solid fa-timeline"></i></div>
+      <div class="memory-guide-text">
+        <strong data-i18n="memory.chatGuideTitle">Come funziona la Memoria di Chat:</strong>
+        <p data-i18n-html="memory.chatGuideText">Se attiva, ogni turno di conversazione genera automaticamente un riassunto associato all'ID univoco del messaggio (<code>msg_id</code>). Il modello può fare riferimento a questi ID per richiamare il contesto. Puoi modificare qualsiasi riassunto per rettificare informazioni; l'eliminazione è protetta per mantenere coerente la sequenza temporale.</p>
+      </div>
+    </div>
+
+    <!-- Doppia attivazione per questa chat: Timeline turni e Inclusione Dossier Globale -->
+    <div class="memory-activation-bar" style="display: flex; flex-direction: column; gap: 8px;">
+      <label class="synth-toggle-wrapper" for="toggle-chat-memory-active">
+        <span class="synth-switch"><input type="checkbox" id="toggle-chat-memory-active" checked><span class="synth-slider"></span></span>
+        <span data-i18n-html="memory.toggleChatTimeline"><strong>Memoria di questa Chat (Timeline turni)</strong>: genera sintesi automatica a ogni giro e inietta la cronologia nel prompt.</span>
+      </label>
+      <label class="synth-toggle-wrapper" for="toggle-chat-include-global">
+        <span class="synth-switch"><input type="checkbox" id="toggle-chat-include-global" checked><span class="synth-slider"></span></span>
+        <span data-i18n-html="memory.toggleChatIncludeGlobal"><strong>Includi Dossier Globale in questa chat</strong>: disattiva se desideri isolare completamente questa conversazione dal profilo globale.</span>
+      </label>
+    </div>
+
+    <section class="memory-levels" id="memory-levels" aria-labelledby="memory-levels-title">
+      <div class="memory-levels-head">
+        <h3 id="memory-levels-title" data-i18n="memory.levelsTitle">Memoria a livelli</h3>
+        <span id="memory-levels-status" class="memory-levels-status"></span>
+      </div>
+      <label class="synth-toggle-wrapper memory-levels-own" for="memory-levels-own">
+        <span class="synth-switch"><input type="checkbox" id="memory-levels-own"><span class="synth-slider"></span></span>
+        <span><strong data-i18n="memory.levelsOwn">Valori propri per questa chat</strong> <small data-i18n="memory.levelsOwnHint"></small></span>
+      </label>
+      <div class="memory-levels-settings">
+        <label class="memory-field" for="memory-levels-cap"><span data-i18n="memory.levelsCap">Tetto di contesto (token)</span><input type="number" id="memory-levels-cap" min="4000" step="1000"><small data-i18n="memory.levelsCapHint"></small></label>
+        <label class="memory-field" for="memory-levels-share"><span data-i18n="memory.levelsShare">Spazio per i riassunti (% del tetto)</span><input type="number" id="memory-levels-share" min="0" max="90" step="5"><small data-i18n="memory.levelsShareHint"></small></label>
+        <label class="memory-field" for="memory-levels-recent"><span data-i18n="memory.levelsRecent">Turni recenti sempre interi</span><input type="number" id="memory-levels-recent" min="0" max="50" step="1"><small data-i18n="memory.levelsRecentHint"></small></label>
+      </div>
+      <p class="memory-levels-warning" id="memory-levels-warning" hidden></p>
+      <p class="memory-levels-hint" data-i18n="memory.levelsHint">Valgono per tutte le chat.</p>
+      <div id="memory-levels-tree" class="memory-levels-tree"></div>
+    </section>
+
+    <div class="memory-dialog-body chat-timeline-body" id="chat-memory-body">
+      <section class="memory-library" aria-label="Memorie chat salvate" data-i18n-aria-label="memory.savedAriaLabel">
+        <input id="chat-memory-search" type="search" placeholder="Cerca nelle note di questa chat…" aria-label="Cerca nelle memorie di questa chat" maxlength="200" data-i18n-placeholder="memory.chatSearchPlaceholder" data-i18n-aria-label="memory.chatSearchPlaceholder">
+        <div id="chat-memory-list" class="memory-list-scroll"></div>
+      </section>
+      <form id="chat-memory-form" class="memory-editor" hidden>
+        <div class="memory-editor-heading">
+          <h3 id="chat-memory-editor-title" data-i18n="memory.editChatTitle">Modifica sintesi del turno</h3>
+          <button type="button" class="btn" id="btn-cancel-chat-memory" title="Annulla modifica" data-i18n-title="memory.cancelEdit"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="memory-scope-indicator">
+          <span class="memory-scope-badge"><i class="fa-solid fa-comments"></i> <span data-i18n="memory.chatBadge">Questa Chat (Locale)</span></span>
+          <span id="chat-memory-msg-badge" class="memory-scope-badge" style="display: none; margin-left: 6px; font-family: var(--font-mono);"><i class="fa-solid fa-hashtag"></i> <span id="chat-memory-msg-id-text"></span></span>
+        </div>
+        <p id="chat-memory-form-hint" data-i18n="memory.chatFormHint">Modifica la sintesi del turno per aggiornare il contesto del modello.</p>
+        <label class="memory-field" for="chat-memory-content"><span data-i18n="memory.noteLabel">Sintesi del Turno</span><textarea id="chat-memory-content" rows="6" maxlength="2000" required placeholder="Es. In questa chat stiamo sviluppando l'integrazione della finestra Tauri con SQLite." data-i18n-placeholder="memory.notePlaceholder"></textarea></label>
+        <label class="synth-toggle-wrapper" for="chat-memory-enabled-checkbox"><span class="synth-switch"><input type="checkbox" id="chat-memory-enabled-checkbox" checked><span class="synth-slider"></span></span> <span data-i18n="memory.activeLabel">Memoria attiva (inclusa nel contesto del modello)</span></label>
+        <p id="chat-memory-form-error" role="alert"></p>
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button" class="btn" id="btn-cancel-chat-memory-footer" data-i18n="common.cancel">Annulla</button>
+          <button class="btn btn-primary" id="btn-chat-memory-save" type="submit" data-i18n="memory.saveTurnSummary">Salva sintesi turno</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Dialog 3: Ambiente di questa chat (container) -->
+  <dialog id="chat-env-dialog" class="workspace-dialog memory-dialog env-dialog" aria-labelledby="chat-env-dialog-title">
+    <div class="memory-dialog-heading">
+      <div class="memory-dialog-header-info">
+        <h2 id="chat-env-dialog-title"><i class="fa-solid fa-cube" style="color: var(--primary);"></i> <span data-i18n="env.popoverTitle">Ambiente Isolato (Sandbox)</span></h2>
+        <p data-i18n="env.popoverDesc">Ogni chat opera in un container dedicato. Il modello esegue codice e comandi senza poter accedere al tuo computer o alle altre chat.</p>
+      </div>
+      <button class="btn-chat-action" data-close-dialog="chat-env-dialog" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="env-dialog-body" id="chat-env-dialog-body"></div>
+  </dialog>
+
+  <!-- Dialog 4: Tool e deleghe di questa chat -->
+  <dialog id="chat-tools-dialog" class="workspace-dialog memory-dialog env-dialog tools-dialog" aria-labelledby="chat-tools-dialog-title">
+    <div class="memory-dialog-heading">
+      <div class="memory-dialog-header-info">
+        <h2 id="chat-tools-dialog-title"><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> <span data-i18n="chat.toolsInfoPopoverTitle">Orchestrazione Operativa &amp; Deleghe</span></h2>
+        <p data-i18n="chat.toolsInfoPopoverDesc">Panoramica dei tool e dei modelli specialistici attualmente collegati al Master:</p>
+      </div>
+      <button class="btn-chat-action" data-close-dialog="chat-tools-dialog" aria-label="Chiudi" data-i18n-aria-label="common.close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="tools-dialog-body" id="chat-tools-dialog-body"></div>
+  </dialog>
+
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  <aside class="inspector-drawer" id="inspector-drawer">
+    <div class="drawer-header">
+      <div>
+        <h2 id="drawer-model-name" data-i18n="drawer.modelDetails">Dettagli Modello</h2>
+        <span id="drawer-model-id" class="drawer-model-sub"></span>
+      </div>
+      <button class="btn-drawer-close" id="btn-close-drawer" data-i18n-aria-label="drawer.close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="drawer-body" id="drawer-content">
+      <!-- Populated dynamically -->
+    </div>
+  </aside>
+
+  <!-- API Key Modal -->
+  <div class="modal-backdrop" id="modal-key-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <i class="fa-solid fa-key modal-icon"></i>
+        <h3 data-i18n="modal.apiKeyTitle">Configurazione Chiave API OpenRouter</h3>
+      </div>
+      <p data-i18n="modal.apiKeyDesc">La consultazione delle capability dei modelli è pubblica. Inserire una chiave API OpenRouter consente l'invio di messaggi ed esecuzione di test in Chat.</p>
+      
+      <label class="modal-input-label" for="input-api-key" data-i18n="modal.apiKeyLabel">OpenRouter API Key (sk-or-v1-...)</label>
+      <div class="input-with-icon">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" id="input-api-key" placeholder="sk-or-v1-..." spellcheck="false" autocomplete="off" />
+      </div>
+
+      <div class="provider-keys" id="provider-keys">
+        <p class="provider-keys-desc" data-i18n="modal.providersDesc">Le chiavi dei singoli produttori: con una chiave qui, i loro modelli nella lista possono essere chiesti direttamente a loro invece che a OpenRouter. La lista resta una.</p>
+        <div class="provider-keys-rows" id="provider-keys-rows"></div>
+        <label class="provider-keys-prefer"><input type="checkbox" id="provider-prefer-direct" checked> <span data-i18n="modal.providersPrefer">Dove c’è la chiave del produttore, vai diretto (salvo scelta diversa sul modello)</span></label>
+      </div>
+
+      <button type="button" class="onb-restart" id="btn-onboarding-restart"><i class="fa-solid fa-route"></i> <span data-i18n="onboarding.restart">Tour guidato</span></button>
+
+      <div class="modal-actions">
+        <button class="btn btn-danger-outline" id="btn-remove-key" data-i18n="modal.btnRemove">Rimuovi Chiave</button>
+        <button class="btn btn-secondary" id="btn-cancel-key" data-i18n="modal.btnCancel">Annulla</button>
+        <button class="btn btn-primary" id="btn-save-key" data-i18n="modal.btnSave">Salva Chiave</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Sblocco Database Cifrato (Startup Vault Unlock) -->
+  <dialog id="vault-unlock-dialog" class="workspace-dialog vault-unlock-dialog" aria-labelledby="vault-unlock-title">
+    <div class="vault-unlock-card">
+      <div class="vault-unlock-icon">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h2 id="vault-unlock-title" data-i18n="vault.dialogTitle">Archivio SQLite Protetto</h2>
+      <p id="vault-unlock-desc" data-i18n="vault.dialogDesc">Il database di SynthOrg è protetto con cifratura AES-256-GCM. Inserisci la master password per sbloccare conversazioni e memorie.</p>
+
+      <form id="vault-unlock-form" onsubmit="return false;">
+        <div class="vault-input-group">
+          <label for="input-vault-unlock-password">Master Password</label>
+          <div class="password-field-wrap">
+            <input type="password" id="input-vault-unlock-password" class="vault-password-input" placeholder="Inserisci la password di sblocco…" required autofocus autocomplete="current-password">
+            <button type="button" class="btn-toggle-pw" id="btn-toggle-unlock-pw" title="Mostra/Nascondi password">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div id="vault-unlock-error" class="vault-error-banner" style="display: none;"></div>
+        <div class="dialog-actions" style="margin-top: 20px;">
+          <button type="submit" class="btn btn-primary btn-vault-unlock-submit" id="btn-vault-unlock-submit">
+            <i class="fa-solid fa-lock-open"></i>
+            <span data-i18n="vault.unlockBtn">Sblocca Database</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Multimodal Media Lightbox (Fullscreen Image & Video Viewer) -->
+  <div id="chat-media-lightbox" class="chat-lightbox-overlay" style="display: none;" role="dialog" aria-modal="true">
+    <div class="chat-lightbox-backdrop" onclick="window.chatManager?.closeLightbox()"></div>
+    <div class="chat-lightbox-container">
+      <div class="chat-lightbox-toolbar">
+        <div class="chat-lightbox-title" id="chat-lightbox-title">Media</div>
+        <div class="chat-lightbox-actions">
+          <div class="chat-lightbox-zoom-group" id="chat-lightbox-zoom-group">
+            <button class="chat-lightbox-btn" id="chat-lightbox-zoom-out" data-i18n-title="artifact.zoomOut" title="Riduci" onclick="window.chatManager?.zoomLightbox(-0.25)">
+              <i class="fa-solid fa-magnifying-glass-minus"></i>
+            </button>
+            <span class="chat-lightbox-zoom-level" id="chat-lightbox-zoom-level">100%</span>
+            <button class="chat-lightbox-btn" id="chat-lightbox-zoom-in" data-i18n-title="artifact.zoomIn" title="Ingrandisci" onclick="window.chatManager?.zoomLightbox(0.25)">
+              <i class="fa-solid fa-magnifying-glass-plus"></i>
+            </button>
+            <button class="chat-lightbox-btn" id="chat-lightbox-zoom-reset" data-i18n-title="artifact.zoomReset" title="Reimposta zoom" onclick="window.chatManager?.resetLightboxZoom()">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+          </div>
+          <a class="chat-lightbox-btn" id="chat-lightbox-download" href="#" download data-i18n-title="artifact.download" title="Scarica file" target="_blank" rel="noopener noreferrer">
+            <i class="fa-solid fa-download"></i>
+          </a>
+          <a class="chat-lightbox-btn" id="chat-lightbox-external" href="#" data-i18n-title="artifact.openExternal" title="Apri nel browser" target="_blank" rel="noopener noreferrer">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+          <button class="chat-lightbox-btn chat-lightbox-close" data-i18n-title="artifact.close" title="Chiudi (Esc)" onclick="window.chatManager?.closeLightbox()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <div class="chat-lightbox-stage" id="chat-lightbox-stage">
+        <!-- Image or Video injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- App Core Scripts -->
+  <script src="/js/sanitize.js"></script>
+  <script src="/js/i18n.js"></script>
+  <script src="/js/providers.js"></script>
+  <script src="/js/catalog.js"></script>
+  <script src="/js/fuzzy.js"></script>
+  <script src="/js/operational.js"></script>
+  <script src="/js/prompts.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/ui-state.js"></script>
+  <script src="/js/sync.js"></script>
+<script src="/js/graph-reasoning.js"></script>
+<script src="/js/model-gateway.js"></script>
+  <script src="/js/local-models.js"></script>
+  <script src="/js/loaded-models.js"></script>
+  <script src="/js/local-keeper.js"></script>
+  <script src="/js/local-onnx.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/chat-workspace.js"></script>
+  <script src="/js/chat-shell.js"></script>
+  <script src="/js/lab.js"></script>
+  <script src="/js/project-tree.js"></script>
+  <script src="/js/project-shelf.js"></script>
+  <script src="/js/code-history.js"></script>
+  <script src="/js/code-workspace.js"></script>
+  <!-- Writes the script tags of the sections that are switched on (Code: canvas, history, workspace). -->
+  <script src="/js/sections.js"></script>
+  <script src="/js/onboarding.js"></script>
+  <script src="/js/help.js"></script>
+  <script src="/js/chat-models.js"></script>
+  <script src="/js/computer-use.js"></script>
+  <script src="/js/realtime-puppet.js"></script>
+  <script src="/js/realtime-wellbeing.js"></script>
+  <script src="/js/realtime.js"></script>
+  <script src="/js/realtime-agenda.js"></script>
+  <script src="/js/realtime-jobs.js"></script>
+  <script src="/js/realtime-notices.js"></script>
+  <script src="/js/realtime-usage.js"></script>
+  <script src="/js/realtime-features.js"></script>
+  <script src="/js/realtime-watch.js"></script>
+  <script src="/js/realtime-liaison.js"></script>
+  <script src="/js/qr.js"></script>
+  <script src="/js/realtime-phone.js"></script>
+  <script src="/js/plan.js"></script>
+  <script src="/js/live-patch.js"></script>
+  <script src="/js/bridge.js"></script>
+  <script src="/js/realtime-desk.js"></script>
+  <script src="/js/realtime-room.js"></script>
+  <script src="/js/realtime-mascot.js"></script>
+  <script src="/js/window-resize.js"></script>
+  <script src="/js/remote.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>

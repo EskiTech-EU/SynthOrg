@@ -1,0 +1,38 @@
+# Developer tools' files
+.lite_workspace.lua
+
+# Embedded runtimes and build output
+/bin
+/dist
+/node_modules/
+/vendor/sidex/node_modules/
+/vendor/sidex/target/
+/vendor/sidex/dist/
+/resources/assets/
+/resources/code/
+/resources/extensions/
+/code-editor-bin/
+/tectonic-bin/
+/resources/vendor/pdfjs/
+/resources/webview-pre/
+/resources/builtin-extensions.js
+/resources/extensions-meta.json
+/resources/nls.messages.json
+/resources/codicon.ttf
+/resources/onig.wasm
+/src-tauri/target
+/src-tauri/runtime
+
+# Logs
+*.log
+
+# Local conversations and memory (including SQLite WAL files)
+/data/
+/.tmp/
+
+# What the reference phone client keeps between one use and the next (keys of a test phone)
+/scripts/.bridge-phone/
+/photocraft-src/
+/resources/photocraft/
+/photo-tools-bin/
+/server/photo/rembg/target/

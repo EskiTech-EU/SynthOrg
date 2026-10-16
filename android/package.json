@@ -1,0 +1,16 @@
+{
+  "name": "synthorg-phone",
+  "version": "1.2.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "description": "SynthOrg on the phone: the computer's interface, reached through the I2P bridge",
+  "scripts": {
+    "stage": "node scripts/stage-ui.js",
+    "tauri": "tauri",
+    "android:dev": "tauri android dev",
+    "android:build": "tauri android build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}

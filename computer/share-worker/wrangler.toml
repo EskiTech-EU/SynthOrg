@@ -1,0 +1,20 @@
+name = "synthorg-share"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[vars]
+# The private repository the packages are written to: "owner/name".
+GITHUB_REPO = ""
+GITHUB_BRANCH = "main"
+
+# The token is a secret, never written here:
+#   npx wrangler secret put GITHUB_TOKEN
+
+# Optional: at most 20 packages a minute from one place.
+# [[ratelimits]]
+# name = "LIMITER"
+# namespace_id = "1001"
+#   [ratelimits.simple]
+#   limit = 20
+#   period = 60

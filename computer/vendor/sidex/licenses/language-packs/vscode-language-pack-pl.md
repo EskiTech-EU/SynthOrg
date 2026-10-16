@@ -1,0 +1,7 @@
+# Polish Language Pack for Visual Studio Code 1.110.0
+
+Publisher: MS-CEINTL
+License (as declared by the pack): SEE MIT LICENSE IN LICENSE.md
+Source: https://github.com/Microsoft/vscode-loc
+Downloaded from: https://open-vsx.org/api/MS-CEINTL/vscode-language-pack-pl/1.110.0/file/MS-CEINTL.vscode-language-pack-pl-1.110.0.vsix
+SHA-256: ca768894eab3b2bca12af76a95c6ed5958534a5cd0a43e12e5337f218356056d

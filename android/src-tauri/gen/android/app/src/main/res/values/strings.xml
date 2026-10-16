@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">"SynthOrg"</string>
+    <string name="main_activity_title">"SynthOrg"</string>
+    <string name="link_channel">Collegamento al computer</string>
+    <string name="link_title">SynthOrg è collegato al computer</string>
+    <string name="link_text">Il collegamento resta attivo mentre usi altre app. Si chiude quando chiudi SynthOrg.</string>
+    <string name="link_close">Chiudi SynthOrg</string>
+</resources>

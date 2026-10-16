@@ -1,0 +1,25 @@
+[package]
+name = "synthorg-rembg"
+version = "0.2.0"
+edition = "2021"
+description = "Background removal for the Foto tab of SynthOrg: a segmentation model in ONNX run on the CPU by ONNX Runtime, nothing else."
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "synthorg-rembg"
+path = "src/main.rs"
+
+[dependencies]
+# ONNX Runtime, the library the models are published for. It is not built here: the program
+# loads the one Alpine packages (`apk add onnxruntime`), which the pod image carries.
+ort = { version = "=2.0.0-rc.10", default-features = false, features = ["load-dynamic", "std"] }
+# Decoding of what a photo folder holds, and the PNG the result is written as.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "tiff", "bmp", "gif"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

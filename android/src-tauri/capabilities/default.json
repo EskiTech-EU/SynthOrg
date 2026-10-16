@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The phone's interface: its own commands and events.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

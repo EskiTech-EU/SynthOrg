@@ -1,0 +1,130 @@
+#!/bin/sh
+# SynthOrg: uninstall, as the app's own entry offers it (right click on its icon → "Disinstalla SynthOrg") and as
+# anyone can run it. The same rule as the Windows uninstaller (src-tauri/nsis/hooks.nsh):
+#   - the engine always goes: models, packages, images, the browser's cache, the containers and their images;
+#   - the memory — chats and their files, settings, artifacts, the copy of the projects that live in pods —
+#     stays, unless the user ticks the box that removes it;
+#   - the projects' own disks (podman volumes) go with the engine only when the app said they are also copied
+#     in the memory; otherwise they go with the memory.
+# Then the package is removed, asking for the password as any removal does.
+#
+# For trying it without a screen or a package: SYNTHORG_UNINSTALL_ANSWER=keep|wipe|cancel answers the question,
+# SYNTHORG_UNINSTALL_NO_PACKAGE=1 leaves the package where it is.
+
+DATA="${SYNTHORG_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/org.synthorg.orchestrator}"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/org.synthorg.orchestrator"
+INFO="$DATA/uninstall.json"
+PACKAGE="synth-org"
+MARK=".synthorg-memoria"
+
+# What the app wrote down for this moment: where the memory is, whether the pods' projects are copied in it.
+value() { sed -n "s/.*\"$1\": *\"\([^\"]*\)\".*/\1/p" "$INFO" 2>/dev/null | head -n 1; }
+MEMORY="$(value MemoryDir)"
+[ -n "$MEMORY" ] || MEMORY="$DATA"
+PODS_COPIED="$(value PodsCopied)"
+
+case "${LANG:-}${LC_ALL:-}${LC_MESSAGES:-}" in
+  *it_*|*it-*)
+    TITLE="Disinstalla SynthOrg"
+    TEXT="SynthOrg viene tolto da questo computer, con i modelli, i pacchetti e i container.\n\nLa memoria — chat, impostazioni, artefatti, copie dei progetti — resta dove si trova, a meno che tu non scelga di eliminarla:\n$MEMORY"
+    WIPE_LABEL="Elimina anche la memoria. Non si può annullare."
+    COLUMN="Scelta"
+    DONE_KEPT="SynthOrg è stato disinstallato. La memoria è rimasta in:\n$MEMORY"
+    DONE_WIPED="SynthOrg è stato disinstallato, con la sua memoria."
+    NO_ROOT="I dati sono stati tolti, ma il pacchetto non può essere rimosso da qui. Per rimuoverlo:\n\nsudo apt remove $PACKAGE"
+    NO_DIALOG="Per disinstallare SynthOrg da un terminale: synthorg-uninstall (chiede se tenere la memoria), poi sudo apt remove $PACKAGE"
+    ASK_TTY="Eliminare anche la memoria ($MEMORY)? [s/N] "
+    ;;
+  *)
+    TITLE="Uninstall SynthOrg"
+    TEXT="SynthOrg is removed from this computer, with the models, the packages and the containers.\n\nThe memory — chats, settings, artifacts, copies of the projects — stays where it is, unless you choose to delete it:\n$MEMORY"
+    WIPE_LABEL="Delete the memory too. This cannot be undone."
+    COLUMN="Choice"
+    DONE_KEPT="SynthOrg has been uninstalled. The memory is still in:\n$MEMORY"
+    DONE_WIPED="SynthOrg has been uninstalled, with its memory."
+    NO_ROOT="The data were removed, but the package cannot be removed from here. To remove it:\n\nsudo apt remove $PACKAGE"
+    NO_DIALOG="To uninstall SynthOrg from a terminal: synthorg-uninstall (it asks whether to keep the memory), then sudo apt remove $PACKAGE"
+    ASK_TTY="Delete the memory too ($MEMORY)? [y/N] "
+    ;;
+esac
+
+say() {
+  if command -v zenity >/dev/null 2>&1 && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && [ -z "${SYNTHORG_UNINSTALL_ANSWER:-}" ]; then
+    zenity --info --no-wrap --title="$TITLE" --text="$1" 2>/dev/null
+  else
+    printf '%b\n' "$1"
+  fi
+}
+
+# --- the question: go on or not, and whether the memory goes too
+
+WIPE=0
+if [ -n "${SYNTHORG_UNINSTALL_ANSWER:-}" ]; then
+  case "$SYNTHORG_UNINSTALL_ANSWER" in wipe) WIPE=1 ;; keep) ;; *) exit 0 ;; esac
+elif command -v zenity >/dev/null 2>&1 && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+  answer="$(zenity --list --checklist --title="$TITLE" --text="$TEXT" --column="" --column="$COLUMN" FALSE "$WIPE_LABEL" --width=560 --height=320 2>/dev/null)" || exit 0
+  [ -n "$answer" ] && WIPE=1
+elif [ -t 0 ]; then
+  printf '%b\n\n' "$TEXT"
+  printf '%s' "$ASK_TTY"
+  read -r reply
+  case "$reply" in s|S|si|sì|y|Y|yes) WIPE=1 ;; esac
+else
+  printf '%b\n' "$NO_DIALOG" >&2
+  exit 1
+fi
+
+# --- the app, if it is open
+
+if command -v synthorg >/dev/null 2>&1; then synthorg --quit >/dev/null 2>&1 & fi
+sleep 3
+pkill -u "$(id -u)" -f /usr/bin/synthorg-node 2>/dev/null
+pkill -u "$(id -u)" -x synthorg 2>/dev/null
+sleep 1
+
+# --- the engine: what the containers' engine holds of SynthOrg. Every name of ours starts with "synthorg-".
+
+for engine in podman docker; do
+  command -v "$engine" >/dev/null 2>&1 || continue
+  "$engine" ps -a --format '{{.Names}}' 2>/dev/null | grep '^synthorg-' | while read -r name; do "$engine" rm -f "$name" >/dev/null 2>&1; done
+  "$engine" volume ls --format '{{.Name}}' 2>/dev/null | grep '^synthorg-' | while read -r name; do
+    case "$name" in
+      # A project's own disk: with the engine only if it is also in the memory, otherwise with the memory.
+      synthorg-code-*) if [ "$PODS_COPIED" = "1" ] || [ "$WIPE" = "1" ]; then "$engine" volume rm -f "$name" >/dev/null 2>&1; fi ;;
+      *) "$engine" volume rm -f "$name" >/dev/null 2>&1 ;;
+    esac
+  done
+  "$engine" network ls --format '{{.Name}}' 2>/dev/null | grep '^synthorg-' | while read -r name; do "$engine" network rm -f "$name" >/dev/null 2>&1; done
+  "$engine" images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -E '^(localhost/)?synthorg-' | while read -r name; do "$engine" rmi -f "$name" >/dev/null 2>&1; done
+done
+
+# --- the engine: what is in the data folder and is not memory, and the browser's own files
+
+for name in models packages images git-none seccomp.json CacheStorage WebKitCache hsts-storage.sqlite localstorage mediakeys storage databases; do
+  rm -rf "${DATA:?}/$name"
+done
+rm -rf "$CACHE"
+# What an earlier version kept of the editor outside the memory.
+rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/SynthOrg/Code"
+rmdir "${XDG_CONFIG_HOME:-$HOME/.config}/SynthOrg" 2>/dev/null
+
+# --- the memory, only when asked: the data folder, and its own marked folder when it is kept elsewhere
+
+if [ "$WIPE" = "1" ]; then
+  if [ "$MEMORY" != "$DATA" ] && [ -f "$MEMORY/$MARK" ]; then rm -rf "$MEMORY"; fi
+  rm -rf "$DATA"
+else
+  rmdir "$DATA" 2>/dev/null
+fi
+
+# --- the package
+
+if [ -z "${SYNTHORG_UNINSTALL_NO_PACKAGE:-}" ] && dpkg -s "$PACKAGE" >/dev/null 2>&1; then
+  if [ "$(id -u)" = "0" ]; then apt-get remove -y "$PACKAGE" >/dev/null 2>&1
+  elif command -v pkexec >/dev/null 2>&1 && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then pkexec apt-get remove -y "$PACKAGE" >/dev/null 2>&1
+  elif [ -t 0 ] && command -v sudo >/dev/null 2>&1; then sudo apt-get remove -y "$PACKAGE"
+  fi
+  if dpkg -s "$PACKAGE" 2>/dev/null | grep -q '^Status: install ok installed'; then say "$NO_ROOT"; exit 2; fi
+fi
+
+if [ "$WIPE" = "1" ]; then say "$DONE_WIPED"; else say "$DONE_KEPT"; fi

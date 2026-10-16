@@ -1,0 +1,106 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "SynthOrg",
+  "version": "1.2.0",
+  "identifier": "org.synthorg.orchestrator",
+  "build": {
+    "frontendDist": "../resources",
+    "beforeBuildCommand": "npm run build:code && npm run stage",
+    "beforeDevCommand": ""
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "SynthOrg - AI Orchestrator & Capability Matrix",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 960,
+        "minHeight": 650,
+        "center": true,
+        "resizable": true,
+        "decorations": false,
+        "visible": false,
+        "dragDropEnabled": false,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,IntensiveWakeUpThrottling --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows",
+        "shadow": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' blob: 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' asset: http://asset.localhost https://asset.localhost data: https://fonts.gstatic.com; img-src 'self' asset: http://asset.localhost https://asset.localhost data: blob: http://127.0.0.1:* https:; media-src 'self' asset: http://asset.localhost https://asset.localhost data: blob: http://127.0.0.1:* https:; connect-src 'self' asset: http://asset.localhost https://asset.localhost ws://127.0.0.1:* ipc: http://ipc.localhost http://127.0.0.1:* https:; object-src 'none'; frame-src 'self' blob:; worker-src 'self' blob:; base-uri 'self'; form-action 'none'",
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$HOME/**",
+          "$TEMP/**"
+        ]
+      },
+      "dangerousDisableAssetCspModification": [
+        "script-src",
+        "style-src"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis",
+      "app",
+      "dmg",
+      "deb",
+      "appimage"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "deb": {
+        "depends": [
+          "libvulkan1",
+          "libgomp1"
+        ],
+        "recommends": [
+          "podman",
+          "zenity"
+        ],
+        "desktopTemplate": "linux/SynthOrg.desktop",
+        "files": {
+          "/usr/bin/synthorg-uninstall": "linux/synthorg-uninstall",
+          "/usr/share/metainfo/org.synthorg.orchestrator.metainfo.xml": "linux/org.synthorg.orchestrator.metainfo.xml"
+        }
+      }
+    },
+    "resources": {
+      "../server": "server",
+      "../package.json": "package.json",
+      "runtime/node_modules": "node_modules",
+      "../vendor/sidex/src-tauri/extension-host": "extension-host",
+      "../vendor/sidex/src/vs/workbench/contrib/terminal/common/scripts": "shell-integration",
+      "../vendor/sidex/extensions": "extensions",
+      "../code-editor-bin": "code-editor-bin",
+      "../tectonic-bin": "tectonic-bin",
+      "../photo-tools-bin": "photo-tools-bin",
+      "../bin/llama": "bin/llama",
+      "../resources/photocraft/build.json": "photocraft/build.json",
+      "../vendor/sidex/licenses": "code-licenses",
+      "../vendor/sidex/LICENSE": "code-licenses/SideX-LICENSE"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "nsis/hooks.nsh"
+      }
+    },
+    "externalBin": [
+      "binaries/synthorg-node"
+    ]
+  }
+}

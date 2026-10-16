@@ -1,0 +1,5 @@
+/ui/
+/dist/
+/node_modules/
+/src-tauri/target/
+/bridge-client/target/

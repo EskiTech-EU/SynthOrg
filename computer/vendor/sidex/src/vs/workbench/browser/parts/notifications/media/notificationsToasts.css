@@ -1,0 +1,110 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/* Sidex Notification Toasts — layout, animation, and toast-specific shape */
+
+@keyframes sidex-toast-slide-in {
+	from { transform: translateX(100%); opacity: 0; }
+	to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes sidex-toast-slide-in-top {
+	from { transform: translateY(-100%); opacity: 0; }
+	to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes sidex-toast-fade-out {
+	from { opacity: 1; transform: translateX(0); }
+	to   { opacity: 0; transform: translateX(40px); }
+}
+
+/** Toast wrapper — position + sizing */
+.monaco-workbench > .notifications-toasts {
+	position: absolute;
+	z-index: 2545;
+	right: 12px;
+	bottom: 36px;
+	display: none;
+	max-width: 500px;
+}
+
+.monaco-workbench.nostatusbar > .notifications-toasts {
+	bottom: 12px;
+}
+
+.monaco-workbench > .notifications-toasts.bottom-left {
+	right: auto;
+	left: 12px;
+}
+
+.monaco-workbench > .notifications-toasts.top-right {
+	bottom: auto;
+	top: 12px;
+}
+
+.monaco-workbench > .notifications-toasts.visible {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench > .notifications-toasts .notification-toast-container:nth-child(n+4) {
+	display: none;
+}
+
+/** Toast shape — border-radius, shadow, border (background comes from notificationsList.css) */
+.monaco-workbench > .notifications-toasts .notifications-list-container {
+	border: 1px solid var(--vscode-notifications-border, transparent);
+	border-radius: 8px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+}
+
+/** Toast animation */
+.monaco-workbench > .notifications-toasts .notification-toast-container > .notification-toast {
+	opacity: 0;
+	transform: translateX(100%);
+	transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease-out;
+}
+
+.monaco-workbench > .notifications-toasts.top-right .notification-toast-container > .notification-toast {
+	transform: translateY(-100%);
+}
+
+.monaco-workbench.monaco-reduce-motion > .notifications-toasts .notification-toast-container > .notification-toast {
+	transition: none;
+}
+
+.monaco-workbench > .notifications-toasts .notification-toast-container > .notification-toast.notification-fade-in,
+.monaco-workbench > .notifications-toasts .notification-toast-container > .notification-toast.notification-fade-in-done {
+	opacity: 1;
+	transform: none;
+}
+
+.monaco-workbench > .notifications-toasts .notification-toast-container > .notification-toast.notification-fade-in-done {
+	transition: none;
+}
+
+/** Toast inner elements — border-radius + kill outline noise */
+.monaco-workbench > .notifications-toasts .notification-toast-container > .notification-toast,
+.monaco-workbench > .notifications-toasts .notification-toast-container > .notification-toast .monaco-scrollable-element,
+.monaco-workbench > .notifications-toasts .notification-toast-container > .notification-toast .monaco-list-row {
+	border-radius: 8px;
+	outline: none !important;
+	overflow: hidden;
+}
+
+/** Toast icons */
+.monaco-workbench > .notifications-toasts .codicon.codicon-error {
+	color: var(--vscode-notificationsErrorIcon-foreground) !important;
+}
+
+.monaco-workbench > .notifications-toasts .codicon.codicon-warning {
+	color: var(--vscode-notificationsWarningIcon-foreground) !important;
+}
+
+.monaco-workbench > .notifications-toasts .codicon.codicon-info {
+	color: var(--vscode-notificationsInfoIcon-foreground) !important;
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- What the software centres of the desktop (App Center, GNOME Software) read to list SynthOrg among the
+     installed applications, with their own button to remove it. -->
+<component type="desktop-application">
+  <id>org.synthorg.orchestrator</id>
+  <name>SynthOrg</name>
+  <summary>AI Orchestrator &amp; Capability Matrix</summary>
+  <summary xml:lang="it">Orchestratore di modelli AI</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-only</project_license>
+  <description>
+    <p>Chats, projects and an assistant that work with models asked of a provider or run on this computer.</p>
+    <p xml:lang="it">Chat, progetti e un assistente che lavorano con modelli chiesti a un fornitore o eseguiti su questo computer.</p>
+  </description>
+  <launchable type="desktop-id">SynthOrg.desktop</launchable>
+  <provides>
+    <binary>synthorg</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+</component>

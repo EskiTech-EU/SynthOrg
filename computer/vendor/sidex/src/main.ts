@@ -1,0 +1,553 @@
+/*---------------------------------------------------------------------------------------------
+ *  SideX — Tauri-based VSCode port
+ *  Entry point. Globals set by inline script in index.html.
+ *--------------------------------------------------------------------------------------------*/
+
+import { installHostBridge } from './synthorg-host.js';
+import { loadNlsMessages } from './nls-loader.js';
+
+async function boot() {
+	installHostBridge();
+	// Load locale translations before any VS Code module imports
+	await loadNlsMessages();
+
+	await Promise.all([
+		import('./synthorgAppearance.contribution.js'),
+		import('./vs/workbench/workbench.common.main.js').catch(e => {
+			console.error('[SideX] Barrel "common" failed:', e);
+			throw e;
+		}),
+		import('./vs/workbench/browser/web.main.js').catch(e => {
+			console.error('[SideX] Barrel "web.main" failed:', e);
+			throw e;
+		}),
+		import('./vs/workbench/browser/parts/dialogs/dialog.web.contribution.js').catch(e => {
+			console.error('[SideX] Barrel "web-dialog" failed:', e);
+			throw e;
+		}),
+		import('./vs/workbench/workbench.web.main.js').catch(e => {
+			console.error('[SideX] Barrel "web-services" failed:', e);
+			throw e;
+		})
+	]);
+	// After every barrel: it overrides commands and menu entries they register.
+	await import('./synthorgProjectScope.contribution.js');
+	// The model's commands on a local project, typed into a terminal of the panel.
+	await import('./synthorgRun.contribution.js');
+	// Inside the frame of a project: the files are the page's, the panel is a window over the editor.
+	await import('./synthorgFrame.contribution.js');
+
+	// SideX Rust bridge initialization — make services available before workbench creation
+	if ((globalThis as any).__SIDEX_TAURI__) {
+		const {
+			SideXEditorBridge,
+			SideXSyntaxService,
+			SideXGitService,
+			SideXSearchService,
+			SideXSettingsService,
+			SideXThemeService,
+			SideXExtensionService,
+			SideXKeymapService,
+			SideXFileSystemProvider
+		} = await import('./vs/platform/sidex/common/sidexServices.js');
+
+		(globalThis as any).__SIDEX_SERVICES__ = {
+			editor: SideXEditorBridge.getInstance(),
+			syntax: new SideXSyntaxService(),
+			git: new SideXGitService(),
+			search: new SideXSearchService(),
+			settings: new SideXSettingsService(),
+			theme: new SideXThemeService(),
+			extensions: new SideXExtensionService(),
+			keymap: new SideXKeymapService(),
+			fileSystem: new SideXFileSystemProvider()
+		};
+
+		console.log('[SideX] Rust bridge services initialized');
+	}
+
+	const { create } = await import('./vs/workbench/browser/web.factory.js');
+	const { URI } = await import('./vs/base/common/uri.js');
+
+	if (document.readyState === 'loading') {
+		await new Promise<void>(r => window.addEventListener('DOMContentLoaded', () => r()));
+	}
+
+	const urlParams = new URLSearchParams(window.location.search);
+	const folderParam = urlParams.get('folder');
+
+	let workspace: any = undefined;
+	if (folderParam) {
+		const parsed = URI.parse(folderParam);
+		if (parsed.scheme === 'file' || parsed.scheme === 'vscode-remote' || parsed.scheme === 'vscode-vfs') {
+			workspace = { folderUri: parsed };
+		}
+	}
+
+	const options: any = {
+		initialColorTheme: {
+			themeType: 'dark'
+		},
+
+		additionalTrustedDomains: ['https://github.com', 'https://*.github.com', 'https://*.githubusercontent.com'],
+
+		// The workspace provider tells VSCode what folder/workspace to open
+		workspaceProvider: {
+			workspace,
+			trusted: true,
+			// SynthOrg: the workbench never rebinds itself to another folder. Which
+			// project is open is decided on SynthOrg's Projects screen alone.
+			open: async (_workspace: any, _options: any) => false
+		},
+		windowIndicator: {
+			label: folderParam ? decodeURIComponent(folderParam.split('/').pop() || 'Code') : 'Code',
+			tooltip: 'SideX — Tauri Code Editor',
+			command: undefined
+		},
+		productConfiguration: {
+			nameShort: 'SideX',
+			nameLong: 'SideX',
+			applicationName: 'sidex',
+			dataFolderName: '.sidex',
+			version: '1.110.0',
+			linkProtectionTrustedDomains: ['https://github.com', 'https://*.github.com', 'https://*.githubusercontent.com']
+		},
+		settingsSyncOptions: {
+			enabled: false
+		},
+		additionalBuiltinExtensions: [],
+		configurationDefaults: {
+			// SynthOrg: no welcome page. Its "Recent" and "Open Folder" belong to the Projects screen.
+			'workbench.startupEditor': 'none',
+			// SynthOrg: a file renamed from the page's bar or column is opened again under its new name; the tab of the old one goes.
+			'workbench.editor.closeOnFileDelete': true,
+			// SynthOrg: the files of the project are in a column of the page; the views of the side bar are reached from the menus.
+			'workbench.activityBar.location': 'hidden',
+			'workbench.enableExperiments': false,
+			'workbench.iconTheme': 'vs-seti',
+			'workbench.colorTheme': 'Dark Modern',
+			'editor.experimentalGpuAcceleration': 'auto',
+			'workbench.productIconTheme': 'Default',
+			// SynthOrg: the open files are tabs of the page's bar, the same for every editor (synthorgFrame.contribution.ts).
+			'workbench.editor.showTabs': 'none',
+			'workbench.editor.enablePreview': false,
+			'workbench.editor.tabCloseButton': 'right',
+			'window.menuBarVisibility': navigator.userAgent.includes('Mac') ? 'hidden' : 'classic',
+			'window.titleBarStyle': 'custom',
+			'window.commandCenter': true,
+			'scm.defaultViewMode': 'list',
+			'telemetry.telemetryLevel': 'off',
+			'update.mode': 'none',
+			'update.showReleaseNotes': false,
+			'extensions.autoUpdate': false,
+			'extensions.autoCheckUpdates': false,
+			'extensions.autoRestart': true,
+			'workbench.settings.enableNaturalLanguageSearch': false,
+			'chat.editor.enabled': false,
+			'chat.commandCenter.enabled': false,
+			'editor.bracketPairColorization.enabled': true,
+			'editor.guides.bracketPairs': true,
+			'editor.linkedEditing': true,
+			'editor.suggest.showStatusBar': true,
+			'editor.inlineSuggest.enabled': true,
+			'editor.stickyScroll.enabled': true,
+			'editor.minimap.enabled': false,
+			'terminal.integrated.defaultProfile.osx': 'zsh',
+			'terminal.integrated.defaultProfile.linux': 'bash',
+			'terminal.integrated.profiles.osx': {
+				zsh: { path: 'zsh', args: ['-l'] },
+				bash: { path: 'bash', args: ['-l'], icon: 'terminal-bash' },
+				fish: { path: 'fish', args: ['-l'] },
+				tmux: { path: 'tmux', icon: 'terminal-tmux' },
+				pwsh: { path: 'pwsh', icon: 'terminal-powershell' }
+			},
+			'terminal.integrated.profiles.linux': {
+				bash: { path: 'bash', args: ['-l'], icon: 'terminal-bash' },
+				zsh: { path: 'zsh', args: ['-l'] },
+				fish: { path: 'fish', args: ['-l'] },
+				tmux: { path: 'tmux', icon: 'terminal-tmux' },
+				pwsh: { path: 'pwsh', icon: 'terminal-powershell' }
+			},
+			'terminal.integrated.enablePersistentSessions': false,
+			// The terminals' names are on the tab strip above them: not repeated in the panel title.
+			'terminal.integrated.tabs.showActiveTerminal': 'never',
+			'editor.formatOnPaste': false,
+			'editor.renderWhitespace': 'selection',
+			'editor.smoothScrolling': false,
+			'editor.cursorBlinking': 'smooth',
+			'editor.cursorSmoothCaretAnimation': 'off',
+			'editor.mouseWheelZoom': true,
+			'editor.wordWrap': 'off',
+			'editor.suggest.preview': true,
+			'editor.parameterHints.enabled': true,
+			'editor.hover.enabled': true,
+			'editor.folding': true,
+			'editor.foldingImportsByDefault': true,
+			'editor.showFoldingControls': 'mouseover',
+			'editor.glyphMargin': true,
+			'editor.lightbulb.enabled': 'on',
+			'editor.colorDecorators': true,
+			'editor.renderLineHighlight': 'all',
+			'editor.matchBrackets': 'always',
+			'editor.occurrencesHighlight': 'singleFile',
+			'workbench.editor.highlightModifiedTabs': true,
+			'workbench.tree.renderIndentGuides': 'always',
+			'security.workspace.trust.startupPrompt': 'never',
+			'security.workspace.trust.banner': 'never',
+			'security.workspace.trust.enabled': false
+		}
+	};
+
+	const workbenchContainer = document.getElementById('workbench');
+	if (workbenchContainer) {
+		create(workbenchContainer, options);
+	} else {
+		create(document.body, options);
+	}
+
+	setupTauriExternalOpener();
+	setupMenuActions();
+
+
+	setupWindowsEditorNewlineKeybindings();
+
+	console.log(
+		'[SideX] Workbench created' + (folderParam ? ` (folder: ${folderParam})` : ' (no folder)'),
+		'workspace:',
+		workspace
+	);
+}
+
+function setupTauriExternalOpener() {
+	import('@tauri-apps/plugin-shell')
+		.then(shell => {
+			(window as any).__sidex_shellOpen = (url: string) => {
+				shell.open(url).catch(() => {});
+			};
+		})
+		.catch(() => {});
+}
+
+function setupWindowStateSave() {
+	import('@tauri-apps/api/core')
+		.then(({ invoke }) => {
+			let saveTimer: ReturnType<typeof setTimeout> | null = null;
+			const debouncedSave = () => {
+				if (saveTimer) {
+					clearTimeout(saveTimer);
+				}
+				saveTimer = setTimeout(() => {
+					invoke('save_window_state', { label: 'main' }).catch(() => {});
+				}, 500);
+			};
+
+			window.addEventListener('resize', debouncedSave);
+			window.addEventListener('beforeunload', () => {
+				invoke('save_window_state', { label: 'main' }).catch(() => {});
+			});
+		})
+		.catch(() => {});
+}
+
+const TITLEBAR_NO_DRAG_SELECTOR =
+	'a, button, input, select, textarea, [contenteditable="true"], [draggable="true"], ' +
+	'.action-item, .command-center, .window-controls-container, .window-icon, ' +
+	'.menubar, .monaco-menu, .monaco-action-bar, .window-title, .action-toolbar-container, ' +
+	'.center-adjacent-toolbar-container, .tabs-container, .tab, .monaco-list, .pane-header, ' +
+	'.composite.title, .split-view-view, .editor-group-container';
+
+function setupNativeWindowDragging() {
+	let appWindow: { startDragging(): Promise<void> } | null = null;
+	import('@tauri-apps/api/window')
+		.then(mod => {
+			appWindow = mod.getCurrentWindow();
+		})
+		.catch(() => {});
+
+	document.addEventListener('mousedown', (e: MouseEvent) => {
+		if (e.button !== 0 || e.defaultPrevented || !appWindow) {
+			return;
+		}
+		const target = e.target as HTMLElement | null;
+		if (!target?.closest('.part.titlebar')) {
+			return;
+		}
+		if (target.closest(TITLEBAR_NO_DRAG_SELECTOR)) {
+			return;
+		}
+		appWindow.startDragging().catch(() => {});
+	});
+}
+
+function setupWindowsEditorNewlineKeybindings() {
+	if (!navigator.userAgent.includes('Windows')) {
+		return;
+	}
+
+	window.addEventListener('keydown', event => {
+		if (event.defaultPrevented || event.key !== 'Enter' || !event.ctrlKey || event.altKey || event.metaKey) {
+			return;
+		}
+
+		const target = event.target instanceof HTMLElement ? event.target : document.activeElement;
+		if (!(target instanceof HTMLElement) || !target.closest('.monaco-editor')) {
+			return;
+		}
+
+		const commandService = (
+			window as { __sidex_commandService?: { executeCommand(commandId: string): Promise<unknown> } }
+		).__sidex_commandService;
+		if (!commandService) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+
+		const commandId = event.shiftKey ? 'editor.action.insertLineBefore' : 'editor.action.insertLineAfter';
+		commandService.executeCommand(commandId).catch(error => {
+			console.error(`[SideX] Failed to execute ${commandId}:`, error);
+		});
+	});
+}
+
+function setupMenuActions() {
+	const menuToCommand: Record<string, string> = {
+		// File
+		new_file: 'workbench.action.files.newUntitledFile',
+		new_window: 'workbench.action.newWindow',
+		open_file: 'workbench.action.files.openFile',
+		open_folder: 'workbench.action.files.openFolder',
+		save: 'workbench.action.files.save',
+		save_as: 'workbench.action.files.saveAs',
+		save_all: 'workbench.action.files.saveAll',
+		close_editor: 'workbench.action.closeActiveEditor',
+		close_window: 'workbench.action.closeWindow',
+		// Edit
+		find: 'actions.find',
+		replace: 'editor.action.startFindReplaceAction',
+		find_in_files: 'workbench.action.findInFiles',
+		replace_in_files: 'workbench.action.replaceInFiles',
+		// Selection
+		expand_selection: 'editor.action.smartSelect.expand',
+		shrink_selection: 'editor.action.smartSelect.shrink',
+		copy_line_up: 'editor.action.copyLinesUpAction',
+		copy_line_down: 'editor.action.copyLinesDownAction',
+		move_line_up: 'editor.action.moveLinesUpAction',
+		move_line_down: 'editor.action.moveLinesDownAction',
+		add_cursor_above: 'editor.action.insertCursorAbove',
+		add_cursor_below: 'editor.action.insertCursorBelow',
+		select_all_occurrences: 'editor.action.selectHighlights',
+		// View
+		command_palette: 'workbench.action.showCommands',
+		explorer: 'workbench.view.explorer',
+		search: 'workbench.view.search',
+		source_control: 'workbench.view.scm',
+		debug: 'workbench.view.debug',
+		extensions: 'workbench.view.extensions',
+		problems: 'workbench.actions.view.problems',
+		output: 'workbench.action.output.toggleOutput',
+		terminal: 'workbench.action.terminal.toggleTerminal',
+		debug_console: 'workbench.debug.action.toggleRepl',
+		toggle_fullscreen: 'workbench.action.toggleFullScreen',
+		zoom_in: 'workbench.action.zoomIn',
+		zoom_out: 'workbench.action.zoomOut',
+		reset_zoom: 'workbench.action.zoomReset',
+		// Go
+		back: 'workbench.action.navigateBack',
+		forward: 'workbench.action.navigateForward',
+		go_to_file: 'workbench.action.quickOpen',
+		go_to_symbol: 'workbench.action.showAllSymbols',
+		go_to_line: 'workbench.action.gotoLine',
+		go_to_definition: 'editor.action.revealDefinition',
+		go_to_references: 'editor.action.goToReferences',
+		// Run
+		start_debugging: 'workbench.action.debug.start',
+		run_without_debugging: 'workbench.action.debug.run',
+		stop_debugging: 'workbench.action.debug.stop',
+		restart_debugging: 'workbench.action.debug.restart',
+		toggle_breakpoint: 'editor.debug.action.toggleBreakpoint',
+		// Terminal
+		new_terminal: 'workbench.action.terminal.new',
+		split_terminal: 'workbench.action.terminal.split',
+		run_task: 'workbench.action.tasks.runTask',
+		run_build_task: 'workbench.action.tasks.build',
+		// Help
+		keyboard_shortcuts: 'workbench.action.keybindingsEditor'
+	};
+
+	(window as any).__sidex_menu_action = async (menuId: string) => {
+		if (menuId === 'open_folder') {
+			return; // SynthOrg: projects are opened from its Projects screen
+		}
+
+		if (menuId === 'find') {
+			const editorService = (window as any).__sidex_editorService;
+			if (editorService?.activeEditor?.typeId === 'workbench.editors.webviewInput') {
+				try {
+					await (window as any).__sidex_commandService?.executeCommand('editor.action.webvieweditor.showFind');
+				} catch {}
+				return;
+			}
+		}
+
+		const commandId = menuToCommand[menuId];
+		if (!commandId) {
+			console.warn(`[SideX] Unknown menu action: ${menuId}`);
+			return;
+		}
+		try {
+			const event = new CustomEvent('sidex-command', { detail: { commandId } });
+			window.dispatchEvent(event);
+		} catch (e) {
+			console.error(`[SideX] Failed to execute menu command ${commandId}:`, e);
+		}
+	};
+
+	// Native menu events arrive as CustomEvents from the Rust backend
+	window.addEventListener('sidex-native-menu', ((e: CustomEvent) => {
+		const menuId = e.detail;
+		if (typeof menuId === 'string' && (window as any).__sidex_menu_action) {
+			(window as any).__sidex_menu_action(menuId);
+		}
+	}) as EventListener);
+
+	// Listen for command execution via keyboard shortcuts forwarded from native menu
+	window.addEventListener('sidex-command', async (e: any) => {
+		const commandId = e.detail?.commandId;
+		if (!commandId) {
+			return;
+		}
+		if (
+			commandId === 'workbench.action.files.openFolder' ||
+			commandId === 'workbench.action.files.openFolderViaWorkspace'
+		) {
+			return; // SynthOrg: projects are opened from its Projects screen
+		}
+		try {
+			const commandService = (window as any).__sidex_commandService;
+			if (commandService) {
+				await commandService.executeCommand(commandId);
+			} else {
+				console.warn(`[SideX] Command service not ready, queuing: ${commandId}`);
+			}
+		} catch (err) {
+			console.error(`[SideX] Command ${commandId} failed:`, err);
+		}
+	});
+}
+
+/**
+ * After NLS translations are loaded into `_VSCODE_NLS_MESSAGES`, send
+ * translated labels to the Rust side so the native macOS menu bar updates.
+ */
+async function updateNativeMenuLabels() {
+	if (!navigator.userAgent.includes('Mac')) {
+		return;
+	}
+
+	const nlsMessages: string[] | undefined = (globalThis as any)._VSCODE_NLS_MESSAGES;
+	if (!nlsMessages) {
+		return;
+	}
+
+	// NLS key -> native menu item ID.
+	// Submenu headers use the submenu IDs from lib.rs; individual items use
+	// the MenuItemBuilder IDs.  Keys come from menubarControl.ts / the
+	// various contribution files.
+	const nlsKeyToMenuId: Record<string, string> = {
+		// Submenu titles
+		mFile: 'file_menu',
+		mEdit: 'edit_menu',
+		mSelection: 'selection_menu',
+		mView: 'view_menu',
+		mGoto: 'go_menu',
+		mRun: 'run_menu',
+		mTerminal: 'terminal_menu',
+		mHelp: 'help_menu',
+		// File menu items
+		miNewFile: 'new_file',
+		miNewWindow: 'new_window',
+		miOpenFile: 'open_file',
+		miSave: 'save',
+		miSaveAs: 'save_as',
+		miCloseEditor: 'close_editor',
+		// Edit menu items
+		miFind: 'find',
+		miReplace: 'replace',
+		miFindInFiles: 'find_in_files',
+		miReplaceInFiles: 'replace_in_files',
+		// View menu items
+		miCommandPalette: 'command_palette',
+		miToggleFullScreen: 'toggle_fullscreen',
+		miZoomIn: 'zoom_in',
+		miZoomOut: 'zoom_out',
+		miZoomReset: 'reset_zoom',
+		// Go menu items
+		miBack: 'back',
+		miForward: 'forward',
+		miGotoFile: 'go_to_file',
+		miGotoSymbolInWorkspace: 'go_to_symbol',
+		miGotoLine: 'go_to_line',
+		miGotoDefinition: 'go_to_definition',
+		// Run menu items
+		miStartDebugging: 'start_debugging',
+		miRunWithoutDebugging: 'run_without_debugging',
+		miStopDebugging: 'stop_debugging',
+		miRestartDebugging: 'restart_debugging',
+		miToggleBreakpoint: 'toggle_breakpoint',
+		// Terminal menu items
+		miNewTerminal: 'new_terminal',
+		miSplitTerminal: 'split_terminal',
+		miRunTask: 'run_task',
+		miRunBuildTask: 'run_build_task',
+		// Help menu items
+		miWelcome: 'welcome',
+		miDocumentation: 'documentation',
+		miReleaseNotes: 'release_notes',
+		miKeyboardShortcuts: 'keyboard_shortcuts',
+		miReportIssue: 'report_issue'
+	};
+
+	try {
+		const indexRes = await fetch('/nls.messages.json');
+		if (!indexRes.ok) {
+			return;
+		}
+		const nlsEntries: Array<{ key: string; msg: string }> = await indexRes.json();
+
+		const labels: Record<string, string> = {};
+
+		for (let i = 0; i < nlsEntries.length; i++) {
+			const menuId = nlsKeyToMenuId[nlsEntries[i].key];
+			if (menuId) {
+				const translated = nlsMessages[i];
+				if (typeof translated === 'string' && translated !== nlsEntries[i].msg) {
+					labels[menuId] = translated.replace(/&&/g, '').replace(/&/g, '');
+				}
+			}
+		}
+
+		if (Object.keys(labels).length === 0) {
+			return;
+		}
+
+		const { invoke } = await import('@tauri-apps/api/core');
+		await invoke('update_menu_labels', { labels });
+	} catch (e) {
+		console.warn('[SideX] Could not update native menu labels:', e);
+	}
+}
+
+boot().catch(err => {
+	console.error('[SideX] Fatal:', err);
+	const container = document.createElement('div');
+	container.style.cssText = 'padding:40px;color:#ccc;font-family:system-ui';
+	const h2 = document.createElement('h2');
+	h2.textContent = 'SideX failed to start';
+	const pre = document.createElement('pre');
+	pre.style.cssText = 'color:#f88;white-space:pre-wrap';
+	pre.textContent = (err as Error)?.stack || String(err);
+	container.append(h2, pre);
+	document.body.replaceChildren(container);
+});

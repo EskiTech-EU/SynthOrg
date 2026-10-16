@@ -1,0 +1,15 @@
+[Desktop Entry]
+Categories=Development;Utility;
+Comment={{comment}}
+Exec={{exec}}
+StartupWMClass={{exec}}
+Icon={{icon}}
+Name={{name}}
+Terminal=false
+Type=Application
+Actions=Uninstall;
+
+[Desktop Action Uninstall]
+Name=Uninstall SynthOrg
+Name[it]=Disinstalla SynthOrg
+Exec=synthorg-uninstall

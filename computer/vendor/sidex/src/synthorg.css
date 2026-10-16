@@ -1,0 +1,95 @@
+/* SynthOrg owns outer window controls. Keep the IDE's menus and project search. */
+.window-controls-container, .sidex-window-controls, .window-appicon { display: none !important; }
+.monaco-workbench { font-family: var(--synthorg-font, system-ui); }
+.monaco-workbench .monaco-button,
+.monaco-workbench .monaco-inputbox,
+.monaco-workbench .sidex-profile-button { border-radius: var(--synthorg-radius, 4px); }
+
+/* The project name is a label here: projects are chosen on SynthOrg's Projects screen. */
+.monaco-workbench .part.titlebar .sidex-project-name,
+.monaco-workbench .part.titlebar .sidex-project-name:hover { cursor: default; background: transparent; }
+
+/* Editor settings: a flat icon button like every other title-bar action, not a native <button>. */
+.monaco-workbench .part.titlebar .titlebar-right .sidex-profile-button {
+	appearance: none;
+	width: 28px;
+	height: 24px;
+	padding: 0;
+	margin: 0 8px 0 6px;
+	justify-content: center;
+	border: 0;
+	outline: 0;
+	background: transparent;
+	color: var(--vscode-titleBar-activeForeground, #cccccc);
+	opacity: 0.75;
+}
+.monaco-workbench .part.titlebar .titlebar-right .sidex-profile-button:hover { opacity: 1; background: color-mix(in srgb, var(--vscode-titleBar-activeForeground, #cccccc) 12%, transparent); }
+.monaco-workbench .part.titlebar .sidex-profile-button:focus-visible { outline: 1px solid var(--vscode-focusBorder, #7c6cf0); outline-offset: -1px; }
+.monaco-workbench .part.titlebar .sidex-profile-button .codicon { font-size: 16px; }
+
+/* The search bar is centred over the whole title bar, floating above it: as
+   soon as the menus reach past the middle — a narrow editor, the AI panel
+   open, a language whose words are longer — it lands on top of them. Docked
+   in the row instead, it is centred in what the menus and the buttons leave,
+   and shrinks rather than covering anything. The doubled class beats
+   titlebarpart.css whatever order the bundler gives them. */
+.monaco-workbench.monaco-workbench .part.titlebar > .titlebar-container.has-center > .titlebar-center {
+	position: relative;
+	left: auto;
+	right: auto;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.monaco-workbench .part.titlebar .sidex-center-bar { max-width: 100%; overflow: hidden; }
+.monaco-workbench .part.titlebar .sidex-center-placeholder { overflow: hidden; text-overflow: ellipsis; }
+/* When the menus alone would fill the bar they give way, so the search trigger
+   and the settings button stay on screen instead of being pushed off it. */
+.monaco-workbench.monaco-workbench .part.titlebar > .titlebar-container.has-center > .titlebar-left {
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+}
+
+/* The section under the editor (synthorgFrame.contribution.ts) is drawn like the rest of a project's frame: a thin
+   line over it, its tabs as the names of the environments are — small capitals, spaced, the one in view in the
+   accent, an upright line between one and the next — and one button, which folds it to this title and opens it. */
+.monaco-workbench .part.panel > .title { padding: 0 6px 0 8px; }
+.monaco-workbench .part.panel > .title > .global-actions { display: none; }
+/* (The doubled class and the :not() are there to win over the workbench's own rules for these tabs, which are as specific.) */
+.monaco-workbench.monaco-workbench .part.panel > .title > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item { position: relative; padding: 0 2px; background: transparent !important; }
+.monaco-workbench.monaco-workbench .part.panel > .title > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item:not(.icon) .action-label { font-family: var(--synthorg-font, system-ui); font-size: 12px; font-weight: 500; letter-spacing: 0.6px; text-transform: uppercase; background: transparent !important; color: var(--vscode-panelTitle-inactiveForeground); opacity: 1 !important; }
+.monaco-workbench.monaco-workbench .part.panel > .title > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item:not(.icon):hover .action-label { color: var(--vscode-foreground); }
+.monaco-workbench.monaco-workbench .part.panel > .title > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.checked:not(.icon) .action-label { font-weight: 600; color: var(--vscode-panelTitle-activeForeground); }
+.monaco-workbench.monaco-workbench .part.panel > .title > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item + .action-item::before { content: ''; position: absolute; left: -1px; top: 11px; bottom: 11px; width: 1px; background: var(--vscode-panel-border, transparent); }
+.monaco-workbench.monaco-workbench .part.panel > .title > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item .active-item-indicator { display: none; }
+.monaco-workbench .part.panel > .title > .synthorg-fold { order: 99; flex: none; align-self: center; display: flex; align-items: center; justify-content: center; width: 28px; height: 26px; margin-left: 4px; border-radius: var(--synthorg-radius, 4px); font-size: 14px; color: var(--vscode-panelTitle-inactiveForeground, var(--vscode-icon-foreground)); cursor: pointer; }
+.monaco-workbench .part.panel > .title > .synthorg-fold:hover { color: var(--vscode-panelTitle-activeForeground, var(--vscode-foreground)); background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.16)); }
+.monaco-workbench .part.panel > .title > .synthorg-fold:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+/* Folded, the section is this title: what it holds is not shown, nor the buttons that act on it. */
+.monaco-workbench .part.panel.synthorg-folded > .content { visibility: hidden; }
+.monaco-workbench .part.panel.synthorg-folded > .title > .title-actions { display: none; }
+
+/* The branch strip over the file explorer (synthorgBranch.ts): the views below take what is left. */
+.monaco-workbench .explorer-viewlet { display: flex; flex-direction: column; }
+.monaco-workbench .explorer-viewlet > .monaco-pane-view { flex: 1 1 auto; min-height: 0; height: auto; }
+.synthorg-branch-head { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border, transparent)); color: var(--vscode-sideBar-foreground, var(--vscode-foreground)); font-size: 12px; }
+.synthorg-branch-head[hidden], .synthorg-branch-head [hidden] { display: none !important; }
+.synthorg-branch-row { display: flex; gap: 6px; min-width: 0; }
+.synthorg-branch-head button { appearance: none; display: flex; align-items: center; gap: 6px; min-width: 0; height: 26px; padding: 0 8px; border: 1px solid var(--vscode-button-border, transparent); border-radius: var(--synthorg-radius, 4px); background: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, .16)); color: var(--vscode-button-secondaryForeground, inherit); font: inherit; cursor: pointer; }
+.synthorg-branch-head button:hover:not(:disabled) { background: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, .26)); }
+.synthorg-branch-head button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.synthorg-branch-head button:disabled { opacity: .5; cursor: default; }
+.synthorg-branch-head .codicon { flex: none; font-size: 14px; }
+.synthorg-branch-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.synthorg-branch-name { flex: 1 1 auto; font-weight: 600; }
+.synthorg-branch-name .synthorg-branch-label { flex: 1 1 auto; text-align: left; }
+.synthorg-branch-auto { flex: none; width: 28px; padding: 0 !important; justify-content: center; }
+.synthorg-branch-auto[aria-pressed="true"] { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.synthorg-branch-auto[aria-pressed="true"]:hover:not(:disabled) { background: var(--vscode-button-hoverBackground, var(--vscode-button-background)); }
+.synthorg-branch-head.is-busy .synthorg-branch-auto[aria-pressed="true"] .codicon { animation: codicon-spin 1.5s steps(30) infinite; }
+.synthorg-branch-action { flex: 1 1 0; justify-content: center; }
+.synthorg-branch-count { flex: none; min-width: 16px; padding: 0 5px; border-radius: 9px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); font-size: 11px; line-height: 16px; text-align: center; }
+.synthorg-branch-count:empty { display: none; }
+.synthorg-branch-diverged { justify-content: flex-start; border-color: var(--vscode-inputValidation-warningBorder, #b89500) !important; background: var(--vscode-inputValidation-warningBackground, rgba(184, 149, 0, .16)) !important; color: var(--vscode-inputValidation-warningForeground, inherit) !important; }
+.synthorg-branch-note { color: var(--vscode-descriptionForeground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.synthorg-branch-note.is-error { color: var(--vscode-errorForeground); }

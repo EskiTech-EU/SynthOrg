@@ -1,0 +1,6 @@
+<resources>
+    <string name="link_channel">Link with the computer</string>
+    <string name="link_title">SynthOrg is linked to the computer</string>
+    <string name="link_text">The link stays up while you use other apps. It ends when you close SynthOrg.</string>
+    <string name="link_close">Close SynthOrg</string>
+</resources>

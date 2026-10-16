@@ -1,0 +1,21 @@
+[package]
+name = "bridge-client"
+version = "0.1.0"
+license = "AGPL-3.0-only"
+edition = "2024"
+description = "Phone side of the SynthOrg bridge: SAM v3 client, Noise XKhfs+ML-KEM-768 channel, requests and events."
+publish = false
+
+[dependencies]
+# Noise primitives, all pure Rust (no OpenSSL): X25519, ML-KEM-768, ChaCha20-Poly1305, SHA-256/HMAC.
+x25519-dalek = { version = "3.0.0", default-features = false, features = ["zeroize"] }
+ml-kem = "0.3.2"
+chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["alloc"] }
+sha2 = "0.11.0"
+hmac = "0.13.0"
+getrandom = "0.4.3"
+zeroize = "1.9.0"
+data-encoding = "2.11.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tokio = { version = "1.53.1", features = ["net", "io-util", "time", "sync", "macros", "rt", "rt-multi-thread"] }

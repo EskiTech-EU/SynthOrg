@@ -1,0 +1,58 @@
+[package]
+name = "synthorg"
+version = "1.2.0"
+description = "SynthOrg - AI Orchestrator & Capability Matrix"
+authors = ["SynthOrg"]
+license = "AGPL-3.0-only"
+edition = "2021"
+rust-version = "1.91.0"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+sidex_lib = { package = "synthorg-code-runtime", path = "../vendor/sidex/src-tauri" }
+# tray-icon: the icon left in the notification area when the app goes on without its window.
+tauri = { version = "2", features = ["protocol-asset", "unstable", "tray-icon"] }
+tauri-plugin-window-state = "2"
+tauri-plugin-single-instance = "2"
+# The Windows notification that says the app goes on without its window (background.rs).
+tauri-plugin-notification = "2"
+# Direct declarations also expose their ACL metadata to the host build script.
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+getrandom = "0.2"
+# Terminals of isolated Code projects: a local PTY whose process is the
+# container engine's `exec`, so the shell itself runs inside the container.
+portable-pty = "0.8"
+# Installs a `log` implementation so sidex_lib's log macros (including the
+# extension-host stderr forwarder) actually emit. Honours RUST_LOG.
+env_logger = "0.11"
+log = "0.4"
+# Vault dump/undump (async, wire-compatible with server/vault.js)
+aes-gcm = "0.10"
+scrypt = "0.11"
+flate2 = "1"
+hex = "0.4"
+base64 = "0.22"
+
+[target.'cfg(windows)'.dependencies]
+# The page's memory target while the app has no window (background.rs). Same versions Tauri itself links.
+webview2-com = "0.38"
+windows-core = "0.61"
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_DataExchange", "Win32_System_JobObjects", "Win32_System_Memory", "Win32_System_Threading"] }
+
+# Tauri packs every webview of a window into one vertical GtkBox, where a
+# child webview has no position; the Code editor is placed over the page
+# through GTK directly (see linux_view.rs). Same version Tauri itself links.
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

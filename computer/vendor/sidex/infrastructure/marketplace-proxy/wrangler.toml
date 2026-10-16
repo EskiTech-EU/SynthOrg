@@ -1,0 +1,30 @@
+name = "sidex-marketplace-proxy"
+main = "src/worker.ts"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Upstream URLs. These are the sources the worker queries in parallel.
+# They are variables (not secrets) so we can override them for testing.
+[vars]
+MS_UPSTREAM = "https://marketplace.visualstudio.com"
+OPENVSX_UPSTREAM = "https://open-vsx.org"
+
+# KV namespace used as a second-tier cache (edge cache -> KV -> upstream).
+# Create with: wrangler kv namespace create MARKETPLACE_CACHE
+# Then paste the ids here. Do not commit a personal Cloudflare account's ids.
+[[kv_namespaces]]
+binding = "MARKETPLACE_CACHE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_KV_PREVIEW_ID"
+
+[observability]
+enabled = true
+
+[placement]
+mode = "smart"
+
+# Pre-warm the top ~30 extension searches every 30 minutes so cold
+# POPs always have fresh cache. Runs entirely on Cloudflare -- no
+# impact on user machines.
+[triggers]
+crons = ["*/30 * * * *"]

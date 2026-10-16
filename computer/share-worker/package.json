@@ -1,0 +1,6 @@
+{
+  "name": "synthorg-share-worker",
+  "private": true,
+  "type": "module",
+  "description": "Receives the numbers the users of SynthOrg choose to share and writes them to a private GitHub repository."
+}

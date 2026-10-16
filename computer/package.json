@@ -1,0 +1,39 @@
+{
+  "name": "synthorg",
+  "version": "1.2.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "description": "Local AI workspace with SQLite conversations and long-term memory",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "prestart": "npm run fetch-node && npm run fetch-llama && npm run fetch-tectonic && npm run fetch-pdfjs && npm run build:photocraft && npm run build:rembg && npm run build:code",
+    "start": "tauri dev",
+    "predev": "npm run fetch-node && npm run fetch-llama && npm run fetch-tectonic && npm run fetch-pdfjs && npm run build:photocraft && npm run build:rembg && npm run build:code",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "server": "node server/index.js",
+    "test": "node --test tests/*.test.js",
+    "tauri": "tauri",
+    "stage": "node scripts/fetch-node.js && node scripts/fetch-llama.js && node scripts/fetch-tectonic.js && node scripts/fetch-pdfjs.js && node scripts/build-photocraft.js && node scripts/build-rembg.js && node scripts/stage-runtime.js",
+    "build:photocraft": "node scripts/build-photocraft.js",
+    "build:rembg": "node scripts/build-rembg.js",
+    "fetch-node": "node scripts/fetch-node.js",
+    "fetch-llama": "node scripts/fetch-llama.js",
+    "fetch-tectonic": "node scripts/fetch-tectonic.js",
+    "fetch-pdfjs": "node scripts/fetch-pdfjs.js",
+    "build:code": "node scripts/build-code.js",
+    "setup:code": "npm --prefix vendor/sidex ci --ignore-scripts && node scripts/fetch-code-extensions.js && node scripts/fetch-code-language-packs.js",
+    "build:editor": "node scripts/build-editor.js"
+  },
+  "dependencies": {
+    "@huggingface/gguf": "^0.4.6",
+    "puppeteer-core": "^25.10.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}

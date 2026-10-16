@@ -1,0 +1,49 @@
+[package]
+name = "synthorg-phone"
+version = "1.2.0"
+description = "SynthOrg on the phone: the same interface and the same archive as on the computer, paired through the I2P bridge"
+license = "AGPL-3.0-only"
+edition = "2024"
+publish = false
+
+[lib]
+name = "synthorg_phone_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+rusqlite = { version = "0.37", features = ["bundled"] }
+base64 = "0.22"
+# The snapshot of the archive comes compressed (computer/server/bridge-api.js).
+flate2 = "1"
+uuid = { version = "1", features = ["v4"] }
+bridge-client = { path = "../bridge-client" }
+# The archive's rules are the computer's JavaScript files, run as they are (src/archive.rs, native/quickjs).
+rquickjs = "0.14"
+sha2 = "0.11.0"
+getrandom = "0.4.3"
+
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-barcode-scanner = "2"
+
+# The pairing is sealed with a key of the Android Keystore, reached through the app's own Vault class (src/vault.rs).
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+ndk-context = "0.1"
+
+# QuickJS's bindings for Android are not in the crate: native/quickjs/README.md.
+[patch.crates-io]
+rquickjs-sys = { path = "../native/quickjs/rquickjs-sys" }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

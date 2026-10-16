@@ -1,0 +1,46 @@
+/*---------------------------------------------------------------------------------------------
+ *  SideX Editor Placeholder — Matches welcome style
+ *--------------------------------------------------------------------------------------------*/
+
+.monaco-editor-pane-placeholder {
+	padding: 0 32px;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	height: 100%;
+}
+
+.monaco-editor-pane-placeholder:focus {
+	outline: none !important;
+}
+
+.monaco-editor-pane-placeholder .editor-placeholder-icon-container {
+	display: none;
+}
+
+.monaco-editor-pane-placeholder .editor-placeholder-label-container {
+	font-size: 32px;
+	font-weight: 200;
+	color: rgba(200, 200, 200, 0.08);
+	max-width: 500px;
+	text-align: center;
+	user-select: none;
+	-webkit-user-select: none;
+	letter-spacing: -1px;
+}
+
+.monaco-editor-pane-placeholder .editor-placeholder-hint {
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground, #505050);
+	text-align: center;
+	user-select: none;
+	-webkit-user-select: none;
+	opacity: 0.6;
+}
+
+.monaco-editor-pane-placeholder .editor-placeholder-buttons-container {
+	display: none;
+}

@@ -1,0 +1,12 @@
+{
+  "models": [
+    {
+      "file": "MiniCPM5-2B-Q8_0.gguf",
+      "name": "MiniCPM5 2B (Q8)",
+      "description": "OpenBMB, 2B, ragionamento ibrido Think/No-Think.",
+      "source": "https://huggingface.co/openbmb/MiniCPM5-2B-GGUF",
+      "thinking": true,
+      "recommended": { "temperature": 1.0, "top_p": 0.95, "min_p": 0.0 }
+    }
+  ]
+}
