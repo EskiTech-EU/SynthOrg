@@ -1,6 +1,12 @@
 # SynthOrg
 
+[![Licence: AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-blue.svg)](LICENSE)
+[![Windows · Linux · Android](https://img.shields.io/badge/platforms-Windows%20%C2%B7%20Linux%20%C2%B7%20Android-555.svg)](#installation)
+[![Download](https://img.shields.io/badge/download-eskitech.eu-2ea44f.svg)](https://www.eskitech.eu)
+
 SynthOrg is a desktop app for working with AI models without going through any service of ours: remote models are called with your own keys, local models run on your computer, everything else stays on your disk.
+
+![A Code project: the editor, the files of the pod and the project's chat side by side](screenshots/code-and-chat.png)
 
 ## What it does
 
@@ -12,6 +18,12 @@ SynthOrg is a desktop app for working with AI models without going through any s
 - **Assistant**: a character, MO', who takes requests by voice or in writing, hands tasks to the model and delivers the files that come out of them, reads your chats and watches over them at the end of a turn with the rules you give, keeps an agenda, a diary, habits and spending, and gives notices locally without calling any model.
 - **Phone**: an Android app with its own archive, the phone's chats and the computer's chats kept apart, assistant and memories in common, linked to the computer over I2P (no server in between, a Noise XK channel with ML-KEM-768) or on the local network; projects, files and history reachable from the phone.
 - Interface in English and Italian, a guide that teaches by doing, and a switch of its own for every behaviour that persists.
+
+<p align="center">
+  <img src="screenshots/phone-mo.png" width="300" alt="MO' on the phone: talk or write to the assistant, with agenda, diary, wellbeing, tasks and spending at hand">
+  <br>
+  <sub>MO' on the phone, with its agenda, diary, wellbeing, tasks and spending.</sub>
+</p>
 
 ## Data and security
 
