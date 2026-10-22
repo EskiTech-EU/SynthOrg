@@ -50,7 +50,7 @@ The keys of the models go in the Settings. Local models and the weights for phot
 
 The repository holds the sources and the scripts. What the scripts download or compile (the Node runtime, llama.cpp, Tectonic, PhotoCraft, the editor, the extensions, the phone's native libraries) is not in the repository: `npm run stage` in the `computer/` folder prepares it, `android/native/i2pd/build.sh` builds the router for the phone.
 
-## Licence
+## License
 
 SynthOrg is distributed under the [GNU Affero General Public License, version 3](LICENSE). You may use it, study it, change it and redistribute it, for a fee too, as long as every modified version stays under the same licence with its sources available to whoever uses it, including whoever uses it over a network.
 
